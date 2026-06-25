@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   REPORT_TYPES,
@@ -534,6 +535,20 @@ export default function EmergencyApp() {
             onSelect={handleAddressSelect}
             bias={focus ? { lat: focus.lat, lng: focus.lng } : AFFECTED_CENTER}
           />
+          <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              <strong className="font-semibold text-slate-950">
+                Riesgo sísmico:
+              </strong>{" "}
+              priorización de inspección, no daño confirmado.
+            </span>
+            <Link
+              href="/riesgo-sismico"
+              className="inline-flex shrink-0 items-center justify-center rounded-lg bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
+            >
+              Ver riesgo sísmico
+            </Link>
+          </div>
           <div className="relative h-[520px] overflow-hidden rounded-2xl border border-slate-200 shadow-sm lg:h-[640px]">
             <MapView
               reports={mapReports}
