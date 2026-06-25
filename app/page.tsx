@@ -2,6 +2,7 @@ import EmergencyApp from "./components/EmergencyApp";
 import ShareButton from "./components/ShareButton";
 import ChatPanel from "./components/ChatPanel";
 import EmergencyContacts from "./components/EmergencyContacts";
+import MissingPersons from "./components/MissingPersons";
 import { REPORT_TYPES, type ReportType } from "@/lib/types";
 
 const STEPS = [
@@ -42,6 +43,12 @@ export default function Home() {
               Ir al mapa y reportar
             </a>
             <a
+              href="#desaparecidas"
+              className="inline-block rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            >
+              🧍 Personas desaparecidas
+            </a>
+            <a
               href="#telefonos"
               className="inline-block rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
             >
@@ -73,6 +80,8 @@ export default function Home() {
       </section>
 
       <EmergencyApp />
+
+      <MissingPersons />
 
       <EmergencyContacts />
 
