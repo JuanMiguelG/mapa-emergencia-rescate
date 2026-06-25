@@ -334,7 +334,6 @@ export function HeroDesktopNav() {
           />
         ))}
         <PsychologyHelpNavButton />
-        <TranslateWidget />
         <ShareNavButton variant="desktop" />
       </div>
     </nav>

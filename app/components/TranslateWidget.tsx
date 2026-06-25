@@ -43,7 +43,12 @@ function setGoogleTranslateLang(targetLang: string) {
   window.location.reload();
 }
 
-export default function TranslateWidget() {
+interface TranslateWidgetProps {
+  /** Modo flotante: botón circular compacto con dropdown hacia arriba */
+  floating?: boolean;
+}
+
+export default function TranslateWidget({ floating = false }: TranslateWidgetProps) {
   const [open, setOpen] = useState(false);
   const [activeLang, setActiveLang] = useState<LangCode>("es");
   const ref = useRef<HTMLDivElement>(null);
@@ -83,11 +88,69 @@ export default function TranslateWidget() {
   }, []);
 
   const current = LANGS.find((l) => l.code === activeLang) ?? LANGS[2];
+  const isTranslated = activeLang !== "es";
+
+  const dropdown = (
+    <div
+      className={`absolute right-0 z-[2000] min-w-[10rem] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ${
+        floating ? "bottom-full mb-2" : "top-full mt-1.5"
+      }`}
+    >
+      {LANGS.map((lang) => (
+        <button
+          key={lang.code}
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            setActiveLang(lang.code);
+            setGoogleTranslateLang(lang.code);
+          }}
+          className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm font-medium transition hover:bg-slate-50 ${
+            activeLang === lang.code
+              ? "bg-slate-50 font-semibold text-slate-900"
+              : "text-slate-700"
+          }`}
+        >
+          <span aria-hidden>{lang.flag}</span>
+          {lang.label}
+          {activeLang === lang.code && (
+            <span className="ml-auto text-xs text-slate-400">✓</span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (floating) {
+    return (
+      <div ref={ref} className="relative">
+        <div id="google-translate-container" className="hidden" aria-hidden />
+        <button
+          type="button"
+          aria-label="Cambiar idioma de la página"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+          className={`relative flex h-10 w-10 items-center justify-center rounded-full text-base shadow-lg transition ${
+            isTranslated
+              ? "bg-blue-600 text-white ring-2 ring-white hover:bg-blue-500"
+              : "bg-white/90 text-slate-700 hover:bg-white"
+          }`}
+          title={`Idioma: ${current.label}`}
+        >
+          {isTranslated ? (
+            <span aria-hidden className="text-sm">{current.flag}</span>
+          ) : (
+            <Languages aria-hidden className="h-4 w-4" strokeWidth={2.2} />
+          )}
+        </button>
+        {open && dropdown}
+      </div>
+    );
+  }
 
   return (
     <div ref={ref} className="relative">
       <div id="google-translate-container" className="hidden" aria-hidden />
-
       <button
         type="button"
         aria-label="Cambiar idioma"
@@ -100,33 +163,7 @@ export default function TranslateWidget() {
         <span className="hidden lg:inline xl:hidden">{current.flag}</span>
         <span className="lg:hidden">ES</span>
       </button>
-
-      {open && (
-        <div className="absolute right-0 top-full mt-1.5 z-[2000] min-w-[9rem] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
-          {LANGS.map((lang) => (
-            <button
-              key={lang.code}
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                setActiveLang(lang.code);
-                setGoogleTranslateLang(lang.code);
-              }}
-              className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm font-medium transition hover:bg-slate-50 ${
-                activeLang === lang.code
-                  ? "bg-slate-50 font-semibold text-slate-900"
-                  : "text-slate-700"
-              }`}
-            >
-              <span aria-hidden>{lang.flag}</span>
-              {lang.label}
-              {activeLang === lang.code && (
-                <span className="ml-auto text-xs text-slate-400">✓</span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+      {open && dropdown}
     </div>
   );
 }

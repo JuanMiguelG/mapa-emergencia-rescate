@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { psychologyHelpUrl } from "@/lib/site";
 import { trackEvent } from "./openpanel";
+import TranslateWidget from "./TranslateWidget";
 
 function psychologyClickLabel(count: number): string {
   const n = count.toLocaleString("es-VE");
@@ -93,6 +94,7 @@ export default function StickyHelpButton() {
       data-sticky-help-root
       className="fixed bottom-[calc(3.75rem+env(safe-area-inset-bottom))] right-3 z-[1840] flex flex-col items-end gap-3 md:bottom-[max(1rem,env(safe-area-inset-bottom))] md:right-4 md:z-[1900]"
     >
+      <TranslateWidget floating />
       <div
         id="sticky-help-menu"
         role="menu"
