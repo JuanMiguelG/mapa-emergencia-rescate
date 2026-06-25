@@ -246,6 +246,31 @@ const OFFICES: CountryOffice[] = [
     ],
   },
   {
+    country: "Brasil",
+    countryCode: "BR",
+    organization: "Gobierno de Brasil / Itamaraty",
+    lines: [
+      {
+        type: "web",
+        label: "Brasil evalúa asistencia para Venezuela",
+        href: "https://contrapunto.com/global/latinoamerica/colombia-activo-todas-las-capacidades-para-apoyar-a-venezuela-tras-terremotos-brasil-ofrecio-ayuda-al-pais/",
+      },
+    ],
+    shareChannels: [
+      {
+        name: "Apoyo humanitario de Brasil",
+        description:
+          "Brasil expresó solidaridad y pidió a Itamaraty evaluar, junto a la embajada en Caracas, medidas de asistencia para Venezuela.",
+        href: "https://contrapunto.com/global/latinoamerica/colombia-activo-todas-las-capacidades-para-apoyar-a-venezuela-tras-terremotos-brasil-ofrecio-ayuda-al-pais/",
+        source: "Contrapunto",
+        sourceHref:
+          "https://contrapunto.com/global/latinoamerica/colombia-activo-todas-las-capacidades-para-apoyar-a-venezuela-tras-terremotos-brasil-ofrecio-ayuda-al-pais/",
+        updatedAt: "25 jun 2026",
+        status: "verified",
+      },
+    ],
+  },
+  {
     country: "Canadá",
     countryCode: "CA",
     organization: "San Lorenzo Community Center",
@@ -764,6 +789,31 @@ const OFFICES: CountryOffice[] = [
         href: "mailto:busquedarcf@cruzroja.org.hn",
       },
       { type: "hours", label: "8:00 a.m. a 4:00 p.m." },
+    ],
+  },
+  {
+    country: "India",
+    countryCode: "IN",
+    organization: "Gobierno de India",
+    lines: [
+      {
+        type: "web",
+        label: "India ofrece asistencia a Venezuela",
+        href: "https://www.newindianexpress.com/india/2026/Jun/25/india-stands-ready-to-help-pm-modi-condoles-loss-of-lives-in-venezuela-earthquake-disaster",
+      },
+    ],
+    shareChannels: [
+      {
+        name: "Asistencia humanitaria de India",
+        description:
+          "India expresó solidaridad y disposición a extender toda la asistencia posible para labores de alivio y recuperación.",
+        href: "https://www.newindianexpress.com/india/2026/Jun/25/india-stands-ready-to-help-pm-modi-condoles-loss-of-lives-in-venezuela-earthquake-disaster",
+        source: "The New Indian Express",
+        sourceHref:
+          "https://www.newindianexpress.com/india/2026/Jun/25/india-stands-ready-to-help-pm-modi-condoles-loss-of-lives-in-venezuela-earthquake-disaster",
+        updatedAt: "25 jun 2026",
+        status: "verified",
+      },
     ],
   },
   {
@@ -1428,6 +1478,11 @@ const TIME_ZONE_COUNTRY_CODES: Record<string, string> = {
   "Australia/Melbourne": "AU",
   "Australia/Brisbane": "AU",
   "Australia/Perth": "AU",
+  "America/Sao_Paulo": "BR",
+  "America/Manaus": "BR",
+  "America/Belem": "BR",
+  "America/Boa_Vista": "BR",
+  "America/Recife": "BR",
   "Europe/Zurich": "CH",
   "America/Santiago": "CL",
   "Pacific/Easter": "CL",
@@ -1445,6 +1500,7 @@ const TIME_ZONE_COUNTRY_CODES: Record<string, string> = {
   "Atlantic/Canary": "ES",
   "Europe/Paris": "FR",
   "America/Tegucigalpa": "HN",
+  "Asia/Kolkata": "IN",
   "Europe/Dublin": "IE",
   "Europe/Rome": "IT",
   "America/Mexico_City": "MX",
