@@ -108,41 +108,54 @@ export default function EmergencyContacts() {
           </span>
         </summary>
 
-        <div className="border-t border-slate-100 p-4 sm:p-6">
+        <div className="border-t border-slate-100 p-3 sm:p-6">
           <div className="grid gap-5 md:grid-cols-3">
             {GROUPS.map((group) => (
               <div key={group.title}>
-                <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
+                <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900">
                   <span aria-hidden>{group.icon}</span> {group.title}
                 </h3>
-                <ul className="space-y-2">
-                  {group.contacts.map((contact) => (
-                    <li
-                      key={contact.name}
-                      className="rounded-xl border border-slate-100 bg-slate-50 p-3"
-                    >
-                      <p className="text-sm font-medium text-slate-800">
-                        {contact.name}
-                      </p>
-                      <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        {contact.numbers.map((number) => (
-                          <a
-                            key={number}
-                            href={telHref(number)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-white px-2.5 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50"
-                          >
-                            📞 {number}
-                          </a>
-                        ))}
-                      </div>
-                    </li>
-                  ))}
+                <ul className="space-y-1.5">
+                  {group.contacts.map((contact) => {
+                    const single = contact.numbers.length === 1;
+                    return (
+                      <li
+                        key={contact.name}
+                        className={
+                          single
+                            ? "flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2"
+                            : "rounded-xl border border-slate-100 bg-slate-50 px-3 py-2"
+                        }
+                      >
+                        <p className="text-sm font-medium text-slate-800">
+                          {contact.name}
+                        </p>
+                        <div
+                          className={
+                            single
+                              ? "shrink-0"
+                              : "mt-2 grid grid-cols-2 gap-1.5"
+                          }
+                        >
+                          {contact.numbers.map((number) => (
+                            <a
+                              key={number}
+                              href={telHref(number)}
+                              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-bold text-red-700 transition active:scale-95 hover:bg-red-50"
+                            >
+                              📞 {number}
+                            </a>
+                          ))}
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}
           </div>
 
-          <p className="mt-5 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
             Comparte esta información: puede servir a personas que sí necesitan
             ayuda. Si un número no responde, intenta con la línea de emergencia
             general (171 / 911).
