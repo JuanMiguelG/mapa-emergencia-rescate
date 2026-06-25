@@ -2,11 +2,25 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  Brain,
+  CircleCheck,
+  Globe2,
+  HandHeart,
+  HeartHandshake,
+  Link2,
+  MapPinned,
+  MessageCircle,
+  PhoneCall,
+  Search,
+  Share2,
+} from "lucide-react";
+import {
   MOBILE_BAR_LINKS,
   PRIMARY_MAP_LINK,
   SECTION_LINKS,
   type SectionLink,
 } from "@/lib/section-nav";
+import { psychologyHelpUrl } from "@/lib/site";
 
 const SHARE_TEXT =
   "Mapa de Emergencia y Rescate: Terremoto en Venezuela. Reporta y consulta el estado de las zonas en tiempo real.";
@@ -111,15 +125,66 @@ function badgeValue(
 }
 
 const DESKTOP_CHIP: Record<NonNullable<SectionLink["tone"]>, string> = {
-  primary:
-    "border-red-400/40 bg-red-600/90 text-white hover:bg-red-500",
+  primary: "border-red-500 bg-red-600 text-white hover:bg-red-500",
   purple:
-    "border-purple-300/40 bg-purple-600/85 text-white hover:bg-purple-500",
+    "border-purple-300 bg-purple-50 text-purple-900 hover:border-purple-400 hover:bg-purple-100",
   emerald:
-    "border-emerald-300/40 bg-emerald-600/85 text-white hover:bg-emerald-500",
-  sky: "border-sky-300/40 bg-sky-600/85 text-white hover:bg-sky-500",
+    "border-emerald-300 bg-emerald-50 text-emerald-900 hover:border-emerald-400 hover:bg-emerald-100",
+  sky: "border-sky-300 bg-sky-50 text-sky-900 hover:border-sky-400 hover:bg-sky-100",
   default:
-    "border-white/25 bg-white/15 text-white hover:bg-white/25 backdrop-blur-sm",
+    "border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50",
+};
+
+const DESKTOP_ICON = {
+  [PRIMARY_MAP_LINK.href]: MapPinned,
+  "#desaparecidas": Search,
+  "#localizados": CircleCheck,
+  "#telefonos": PhoneCall,
+  "#guia": HeartHandshake,
+  "#centros-acopio": HandHeart,
+  "#ayuda-internacional": Globe2,
+  "#chat": MessageCircle,
+};
+
+const DESKTOP_LABEL: Record<
+  string,
+  { short: string; medium: string; long: string }
+> = {
+  "#desaparecidas": {
+    short: "Des.",
+    medium: "Desap.",
+    long: "Desaparecidas",
+  },
+  "#localizados": {
+    short: "Loc.",
+    medium: "Ubicados",
+    long: "Localizados",
+  },
+  "#telefonos": {
+    short: "Tel.",
+    medium: "Tels.",
+    long: "Teléfonos",
+  },
+  "#guia": {
+    short: "Guía",
+    medium: "Guía",
+    long: "Guía",
+  },
+  "#centros-acopio": {
+    short: "Aco.",
+    medium: "Acopio",
+    long: "Acopio",
+  },
+  "#ayuda-internacional": {
+    short: "Glob.",
+    medium: "Global",
+    long: "Apoyo global",
+  },
+  "#chat": {
+    short: "Chat",
+    medium: "Chat",
+    long: "Chat",
+  },
 };
 
 function NavLink({
@@ -137,60 +202,101 @@ function NavLink({
 }) {
   const badge = badgeValue(link, missing, found);
   const tone = link.tone ?? "default";
+  const Icon = DESKTOP_ICON[link.href as keyof typeof DESKTOP_ICON] ?? Link2;
+  const labels = DESKTOP_LABEL[link.href] ?? {
+    short: link.shortLabel,
+    medium: link.shortLabel,
+    long: link.label,
+  };
 
   return (
     <a
       href={link.href}
-      className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold shadow-sm transition ${DESKTOP_CHIP[tone]} ${className ?? ""}`}
+      title={link.label}
+      aria-label={link.label}
+      className={`inline-flex min-h-9 shrink-0 items-center justify-center gap-1 rounded-lg border px-1.5 py-1.5 text-xs font-semibold shadow-sm transition lg:gap-1.5 lg:px-2 lg:text-[13px] xl:px-2.5 ${DESKTOP_CHIP[tone]} ${className ?? ""}`}
     >
-      <span aria-hidden>{link.icon}</span>
-      <span className={compact ? "sr-only sm:not-sr-only" : undefined}>
-        {compact ? link.shortLabel : link.label}
-      </span>
+      <Icon aria-hidden className="h-4 w-4 shrink-0" strokeWidth={2.2} />
+      {compact ? (
+        <>
+          <span className="lg:hidden">{labels.short}</span>
+          <span className="hidden lg:inline xl:hidden">{labels.medium}</span>
+          <span className="hidden xl:inline">{labels.long}</span>
+        </>
+      ) : (
+        <span>{link.label}</span>
+      )}
       {badge && (
-        <span className="rounded-full bg-black/20 px-1.5 py-0.5 text-[10px] font-bold">
-          {badge}
+        <span className="rounded-full bg-current/10 px-1.5 py-0.5 text-[10px] font-bold leading-none">
+          {compact ? compactBadge(badge) : badge}
         </span>
       )}
     </a>
   );
 }
 
-/** Menú de secciones en el hero — solo desktop/tablet. */
+/** Menú superior de secciones — solo desktop/tablet. */
 export function HeroDesktopNav() {
   const { missing, found } = usePeopleTotals();
 
   return (
     <nav
       aria-label="Secciones principales"
-      className="mt-6 hidden w-full max-w-4xl md:block"
+      className="fixed inset-x-0 top-0 z-[1800] hidden w-full border-b border-white/10 bg-black/45 px-2 py-3 shadow-lg backdrop-blur-md md:block lg:px-3"
     >
-      <a
-        href={PRIMARY_MAP_LINK.href}
-        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-6 py-3 text-base font-bold text-white shadow-lg transition hover:bg-red-500"
-      >
-        <span aria-hidden>{PRIMARY_MAP_LINK.icon}</span>
-        {PRIMARY_MAP_LINK.label}
-      </a>
+      <div className="mx-auto flex max-w-7xl flex-nowrap items-center justify-center gap-1 lg:gap-1.5">
+        <a
+          href={PRIMARY_MAP_LINK.href}
+          title={PRIMARY_MAP_LINK.label}
+          aria-label={PRIMARY_MAP_LINK.label}
+          className="inline-flex min-h-9 shrink-0 items-center justify-center gap-1 rounded-lg bg-red-600 px-2 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-500 lg:gap-1.5 lg:px-2.5 lg:text-[13px]"
+        >
+          <MapPinned aria-hidden className="h-4 w-4" strokeWidth={2.2} />
+          {PRIMARY_MAP_LINK.shortLabel}
+        </a>
 
-      <div className="mt-3 rounded-2xl border border-white/15 bg-black/25 p-3 shadow-lg backdrop-blur-md">
-        <p className="mb-2 text-center text-[11px] font-medium uppercase tracking-wide text-white/70">
-          Ir a una sección
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {SECTION_LINKS.map((link) => (
-            <NavLink
-              key={link.href}
-              link={link}
-              missing={missing}
-              found={found}
-              compact
-            />
-          ))}
-          <ShareNavButton variant="desktop" />
-        </div>
+        {SECTION_LINKS.map((link) => (
+          <NavLink
+            key={link.href}
+            link={link}
+            missing={missing}
+            found={found}
+            compact
+          />
+        ))}
+        <PsychologyHelpNavButton />
+        <ShareNavButton variant="desktop" />
       </div>
     </nav>
+  );
+}
+
+function PsychologyHelpNavButton() {
+  const psychologyUrl = psychologyHelpUrl();
+  const psychologyIsExternal = !psychologyUrl.startsWith("mailto:");
+
+  const trackPsychologyClick = useCallback(() => {
+    fetch("/api/stats/psychology-help", {
+      method: "POST",
+      keepalive: true,
+    }).catch(() => {});
+  }, []);
+
+  return (
+    <a
+      href={psychologyUrl}
+      target={psychologyIsExternal ? "_blank" : undefined}
+      rel={psychologyIsExternal ? "noopener noreferrer" : undefined}
+      onClick={trackPsychologyClick}
+      title="Apoyo psicológico"
+      aria-label="Apoyo psicológico"
+      className="inline-flex min-h-9 shrink-0 items-center justify-center gap-1 rounded-lg border border-violet-300 bg-violet-50 px-1.5 py-1.5 text-xs font-semibold text-violet-900 shadow-sm transition hover:border-violet-400 hover:bg-violet-100 lg:gap-1.5 lg:px-2 lg:text-[13px] xl:px-2.5"
+    >
+      <Brain aria-hidden className="h-4 w-4 shrink-0" strokeWidth={2.2} />
+      <span className="lg:hidden">Psi.</span>
+      <span className="hidden lg:inline xl:hidden">Psico</span>
+      <span className="hidden xl:inline">Apoyo psicológico</span>
+    </a>
   );
 }
 
@@ -232,10 +338,14 @@ function ShareNavButton({
       <button
         type="button"
         onClick={handleShare}
-        className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-white/25 bg-white/15 px-3 py-2 text-sm font-semibold text-white shadow-sm backdrop-blur-sm transition hover:bg-white/25"
+        aria-label={copied ? "Enlace copiado" : "Compartir mapa"}
+        title={copied ? "Enlace copiado" : "Compartir mapa"}
+        className="inline-flex min-h-9 shrink-0 items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-1.5 py-1.5 text-xs font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 lg:gap-1.5 lg:px-2 lg:text-[13px] xl:px-2.5"
       >
-        <span aria-hidden>🔗</span>
-        {copied ? "Copiado" : "Compartir"}
+        <Share2 aria-hidden className="h-4 w-4" strokeWidth={2.2} />
+        <span className="sr-only lg:not-sr-only">
+          {copied ? "Copiado" : "Compartir"}
+        </span>
       </button>
     );
   }

@@ -77,13 +77,14 @@ const STEPS: {
 export default function Home() {
   return (
     <main className="flex-1">
-      <header className="relative overflow-hidden border-b border-slate-800">
+      <header className="relative overflow-hidden border-b border-slate-800 md:pt-16">
         <div
           className="absolute inset-0 bg-[url('/images/hero-terremoto-venezuela.png')] bg-cover bg-center bg-no-repeat"
           aria-hidden
         />
         <div className="absolute inset-0 bg-black/65 sm:bg-black/60" aria-hidden />
-        <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center justify-center px-4 py-10 text-center sm:min-h-[22rem] sm:py-14 md:min-h-[26rem] md:py-16">
+        <HeroDesktopNav />
+        <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center justify-center px-4 py-10 text-center sm:min-h-[22rem] sm:py-14 md:min-h-[23rem] md:py-14">
           <span className="inline-flex items-center gap-2 rounded-full border border-red-400/30 bg-red-600/90 px-3 py-1 text-sm font-medium text-white shadow-lg backdrop-blur-sm">
             🚨 Plataforma de ayuda humanitaria
           </span>
@@ -102,7 +103,6 @@ export default function Home() {
             {CONTACT_EMAIL}
           </a>
           <HeroMobileCta />
-          <HeroDesktopNav />
         </div>
       </header>
 

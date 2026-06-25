@@ -67,7 +67,7 @@ export const SECTION_LINKS: SectionLink[] = [
   {
     href: "#ayuda-internacional",
     label: "Ayuda internacional",
-    shortLabel: "Int'l",
+    shortLabel: "Apoyo global",
     icon: "🌍",
     tone: "sky",
   },
