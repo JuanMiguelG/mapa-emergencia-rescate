@@ -206,6 +206,16 @@ const OFFICES: CountryOffice[] = [
         updatedAt: "25 jun 2026",
         status: "verified",
       },
+      {
+        name: "Canadian Red Cross - Venezuela Earthquakes Appeal",
+        description:
+          "Apelación oficial de Cruz Roja Canadiense para apoyar a personas afectadas por los terremotos en Venezuela.",
+        href: "https://give.redcross.ca/page/26VEA?_lang=en",
+        source: "Canadian Red Cross",
+        sourceHref: "https://www.redcross.ca/",
+        updatedAt: "25 jun 2026",
+        status: "verified",
+      },
     ],
   },
   {
@@ -578,6 +588,30 @@ const OFFICES: CountryOffice[] = [
         href: "mailto:busquedarcf@cruzroja.org.hn",
       },
       { type: "hours", label: "8:00 a.m. a 4:00 p.m." },
+    ],
+  },
+  {
+    country: "Irlanda",
+    countryCode: "IE",
+    organization: "UNICEF Ireland",
+    lines: [
+      {
+        type: "web",
+        label: "UNICEF Ireland - Venezuela Earthquake Appeal",
+        href: "https://www.unicef.ie/donate/venezuela-earthquake-appeal/",
+      },
+    ],
+    shareChannels: [
+      {
+        name: "UNICEF Ireland",
+        description:
+          "Campaña irlandesa de donación para agua, salud y protección de niños afectados por los terremotos.",
+        href: "https://www.unicef.ie/donate/venezuela-earthquake-appeal/",
+        source: "UNICEF Ireland",
+        sourceHref: "https://www.unicef.ie/donate/venezuela-earthquake-appeal/",
+        updatedAt: "25 jun 2026",
+        status: "verified",
+      },
     ],
   },
   {
@@ -1017,6 +1051,7 @@ const TIME_ZONE_COUNTRY_CODES: Record<string, string> = {
   "Europe/Madrid": "ES",
   "Atlantic/Canary": "ES",
   "America/Tegucigalpa": "HN",
+  "Europe/Dublin": "IE",
   "America/Mexico_City": "MX",
   "Pacific/Auckland": "NZ",
   "America/Panama": "PA",
