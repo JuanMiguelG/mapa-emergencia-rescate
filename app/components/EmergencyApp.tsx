@@ -14,6 +14,11 @@ import AdminLogin from "./AdminLogin";
 import AddressSearch, { type GeocodeResult } from "./AddressSearch";
 import { useLowBandwidthMode } from "./useLowBandwidthMode";
 import { distanceMeters, freshnessClass, timeAgo } from "@/lib/format";
+import {
+  EDIFICIOS_COUNT,
+  EDIFICIOS_SOURCE_LABEL,
+  EDIFICIOS_SOURCE_URL,
+} from "@/lib/edificios";
 import type { MissingMapMarker, MissingStats } from "@/lib/missing";
 import type { MapBounds } from "./MapView";
 import {
@@ -585,10 +590,14 @@ export default function EmergencyApp() {
     if (missingStats) {
       base.missing = missingStats.active;
     }
+    // Los edificios importados (read-only) se suman al conteo de "Edificios".
+    base.building += EDIFICIOS_COUNT;
     return base;
   }, [reports, missingStats]);
 
   const showMissingOnMap = filter === "all" || filter === "missing";
+  // La capa de edificios importados se muestra con "todos" o el filtro de edificios.
+  const showEdificios = filter === "all" || filter === "building";
 
   const mapReports = useMemo(() => {
     if (filter === "all") return reports;
@@ -686,7 +695,9 @@ export default function EmergencyApp() {
           center={CARACAS}
           zoom={12}
           fitRequest={fitRequest}
+          showEdificios={showEdificios}
         />
+
 
         {/* Controles flotantes: buscador de direcciones + chips de filtro por tipo */}
         <div className="map-overlay pointer-events-none absolute inset-x-0 top-0 z-[1000] flex flex-col gap-2 p-3">
@@ -873,6 +884,21 @@ export default function EmergencyApp() {
                 <a href="#desaparecidas" className="font-semibold underline">
                   Ver lista completa →
                 </a>
+              </div>
+            )}
+            {filter === "building" && (
+              <div className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                En el mapa hay <strong>{EDIFICIOS_COUNT}</strong> edificios de{" "}
+                <a
+                  href={EDIFICIOS_SOURCE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold underline"
+                >
+                  {EDIFICIOS_SOURCE_LABEL}
+                </a>{" "}
+                (solo lectura; toca uno para ver el daño). Abajo, los reportados
+                por usuarios.
               </div>
             )}
             {visibleReports.length === 0 ? (
