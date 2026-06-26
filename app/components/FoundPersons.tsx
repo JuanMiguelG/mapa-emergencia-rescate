@@ -35,6 +35,7 @@ function formatDate(ts: number | null | undefined): string {
 
 export default function FoundPersons() {
   const [people, setPeople] = useState<MissingPerson[]>([]);
+  console.log("🚀 ~ FoundPersons ~ people:", people);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [page, setPage] = useState(1);
@@ -112,9 +113,8 @@ export default function FoundPersons() {
               💚 Personas localizadas a salvo
             </h2>
             <p className="mt-1 max-w-2xl text-sm text-slate-600">
-              Familias que volvieron a encontrarse gracias a la comunidad.
-              Cada historia es un recordatorio de que vale la pena seguir
-              buscando.
+              Familias que volvieron a encontrarse gracias a la comunidad. Cada
+              historia es un recordatorio de que vale la pena seguir buscando.
             </p>
           </div>
           <a
