@@ -5,24 +5,16 @@ import { useEffect } from "react";
 const STORAGE_KEY = "terremoto:theme";
 
 /**
- * Aplica modo claro/oscuro en `<html data-dark>` según preferencia del sistema
- * o elección guardada en localStorage.
+ * Aplica el tema en `<html data-dark>`. Por defecto el sitio es claro: solo se
+ * activa el modo oscuro si la persona lo eligió explícitamente (localStorage).
+ * Mientras no exista un botón de cambio en la UI, esto mantiene el sitio en
+ * blanco aunque el sistema del visitante esté en modo oscuro.
  */
 export default function ThemeProvider() {
   useEffect(() => {
     const root = document.documentElement;
     const stored = localStorage.getItem(STORAGE_KEY);
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const dark = stored === "dark" || (stored !== "light" && prefersDark);
-    root.dataset.dark = dark ? "true" : "false";
-
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = (e: MediaQueryListEvent) => {
-      if (localStorage.getItem(STORAGE_KEY)) return;
-      root.dataset.dark = e.matches ? "true" : "false";
-    };
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
+    root.dataset.dark = stored === "dark" ? "true" : "false";
   }, []);
 
   return null;

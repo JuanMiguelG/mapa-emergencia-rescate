@@ -113,10 +113,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#EEF2F7" },
-    { media: "(prefers-color-scheme: dark)", color: "#0B1526" },
-  ],
+  themeColor: "#EEF2F7",
 };
 
 export default function RootLayout({
@@ -154,6 +151,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
+      data-dark="false"
       className={`${stara.variable} ${spaceGrotesk.variable} h-full overflow-x-hidden antialiased`}
       suppressHydrationWarning
     >
