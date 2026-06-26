@@ -42,16 +42,16 @@ function usePeopleTotals() {
   return { missing, found };
 }
 
-function getInitialTab(): Tab {
-  if (typeof window === "undefined") return "desaparecidas";
-  const hash = window.location.hash.replace("#", "");
-  if (hash === "localizados") return "localizados";
-  return "desaparecidas";
-}
-
 export default function PersonsTabs() {
-  const [active, setActive] = useState<Tab>(getInitialTab);
+  const [active, setActive] = useState<Tab>("desaparecidas");
   const { missing, found } = usePeopleTotals();
+
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (hash === "localizados" || hash === "desaparecidas") {
+      setActive(hash);
+    }
+  }, []);
 
   const handleHashChange = useCallback(() => {
     const hash = window.location.hash.replace("#", "");
