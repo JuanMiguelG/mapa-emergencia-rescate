@@ -93,10 +93,7 @@ export default function FoundPersons() {
   }
 
   return (
-    <section
-      id="localizados"
-      className="border-y border-emerald-200/60 bg-gradient-to-b from-emerald-50/60 via-white to-white"
-    >
+    <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 sm:p-6">
       <div className="mx-auto w-full max-w-7xl px-4 py-10">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -222,6 +219,6 @@ export default function FoundPersons() {
           onClose={() => setSelected(null)}
         />
       )}
-    </section>
+    </div>
   );
 }

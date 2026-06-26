@@ -194,8 +194,7 @@ export default function MissingPersons() {
   const isSearching = debouncedQuery.trim().length > 0;
 
   return (
-    <section id="desaparecidas" className="mx-auto w-full max-w-7xl px-4 pb-14">
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -425,24 +424,23 @@ export default function MissingPersons() {
             Modo demo: los reportes no se están guardando de forma permanente.
           </p>
         )}
+
+        {showForm && (
+          <MissingPersonForm
+            onCancel={() => setShowForm(false)}
+            onSubmit={handleSubmit}
+          />
+        )}
+
+        {selected && (
+          <MissingPersonDetail
+            person={selected}
+            people={people}
+            onNavigate={setSelected}
+            onClose={() => setSelected(null)}
+            onMarkFound={(payload) => handleMarkFound(selected.id, payload)}
+          />
+        )}
       </div>
-
-      {showForm && (
-        <MissingPersonForm
-          onCancel={() => setShowForm(false)}
-          onSubmit={handleSubmit}
-        />
-      )}
-
-      {selected && (
-        <MissingPersonDetail
-          person={selected}
-          people={people}
-          onNavigate={setSelected}
-          onClose={() => setSelected(null)}
-          onMarkFound={(payload) => handleMarkFound(selected.id, payload)}
-        />
-      )}
-    </section>
   );
 }

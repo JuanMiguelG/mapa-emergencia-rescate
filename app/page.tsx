@@ -24,15 +24,13 @@ const DonationsTicker = dynamic(() => import("./components/DonationsTicker"), {
   loading: () => null,
 });
 
-const MissingPersons = dynamic(() => import("./components/MissingPersons"), {
+const PersonsTabs = dynamic(() => import("./components/PersonsTabs"), {
   loading: () => (
     <section className="mx-auto w-full max-w-7xl px-4 pb-14 text-sm text-slate-500">
-      Cargando lista de personas…
+      Cargando personas…
     </section>
   ),
 });
-
-const FoundPersons = dynamic(() => import("./components/FoundPersons"));
 
 const STEPS: {
   icon: string;
@@ -209,9 +207,7 @@ export default function Home() {
 
       <EmergencyApp />
 
-      <MissingPersons />
-
-      <FoundPersons />
+      <PersonsTabs />
 
       <SiteFooter />
     </main>
