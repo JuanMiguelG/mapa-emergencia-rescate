@@ -9,10 +9,10 @@ export default function TutorialSteps() {
   return (
     <section
       id="tutorial"
-      className="w-full scroll-mt-20 border-b border-[var(--eborder)] py-6"
+      className="w-full scroll-mt-20 border-b border-[var(--eborder)] py-6 px-4 sm:px-6"
       style={{ backgroundColor: "rgb(249, 250, 251)" }}
     >
-      <div className="mx-auto w-full max-w-[1120px] px-4 py-10 sm:px-6">
+      <div className="mx-auto w-full max-w-[1120px] py-10">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <div className="mx-auto">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[rgb(17,24,39)] text-center m-[0px_0px_8px] leading-[1.1]">¿Necesitas ayuda?</h2>
@@ -110,10 +110,10 @@ export default function TutorialSteps() {
           </form>
         </div>
 
-        <div className="e-ayuda-3cards mt-6 max-w-[712px] mx-auto mb-20">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8 mt-6 w-full mb-20">
           <Link
             href="/guia"
-            className="bg-[var(--ebg)] border-[1.5px] border-[var(--eborder)] rounded-[16px] p-[14px_20px] flex items-center gap-[12px] cursor-pointer text-left w-full hover:bg-[var(--einput)] transition duration-150"
+            className="bg-white rounded-[24px] p-8 shadow-[0_4px_24px_rgba(0,0,0,0.04)] flex items-center gap-[12px] cursor-pointer text-left w-full hover:-translate-y-1 transition-transform"
           >
             <div className="w-[38px] h-[38px] bg-[#fef3c7] rounded-[10px] flex items-center justify-center shrink-0">
               <BookOpen size={18} color="#92400E" strokeWidth={2} />
@@ -126,7 +126,7 @@ export default function TutorialSteps() {
           </Link>
           <Link
             href="/apoyo-global"
-            className="bg-[var(--ebg)] border-[1.5px] border-[var(--eborder)] rounded-[16px] p-[14px_20px] flex items-center gap-[12px] cursor-pointer text-left w-full hover:bg-[var(--einput)] transition duration-150"
+            className="bg-white rounded-[24px] p-8 shadow-[0_4px_24px_rgba(0,0,0,0.04)] flex items-center gap-[12px] cursor-pointer text-left w-full hover:-translate-y-1 transition-transform"
           >
             <div className="w-[38px] h-[38px] bg-[#ebf0ff] rounded-[10px] flex items-center justify-center shrink-0">
               <Heart size={18} color="#1649CC" strokeWidth={2} />
@@ -139,7 +139,7 @@ export default function TutorialSteps() {
           </Link>
           <a
             href="/acopio"
-            className="bg-[var(--ebg)] border-[1.5px] border-[var(--eborder)] rounded-[16px] p-[14px_20px] flex items-center gap-[12px] cursor-pointer text-left w-full hover:bg-[var(--einput)] transition duration-150"
+            className="bg-white rounded-[24px] p-8 shadow-[0_4px_24px_rgba(0,0,0,0.04)] flex items-center gap-[12px] cursor-pointer text-left w-full hover:-translate-y-1 transition-transform"
           >
             <div className="w-[38px] h-[38px] bg-[#e3f5f0] rounded-[10px] flex items-center justify-center shrink-0">
               <Home size={18} color="#0A8A6A" strokeWidth={2} />
