@@ -4,6 +4,10 @@ import L from "leaflet";
 import { Marker, Popup } from "react-leaflet";
 import edificiosData from "@/data/derived/edificios-afectados.json";
 import { REPORT_TYPES } from "@/lib/types";
+import {
+	REPORT_TYPE_ICON_COMPONENT,
+	reportTypeSvg,
+} from "@/lib/report-type-icons";
 import LinkText from "./LinkText";
 import { severityMeta } from "@/lib/severity";
 import { xShareHrefFor, whatsappShareHrefFor } from "@/lib/share";
@@ -19,18 +23,19 @@ const edificios = edificiosData as EdificioAfectado[];
 /** Texto para compartir un edificio (sin el enlace; lo añade el destino). */
 function edificioShareText(e: EdificioAfectado): string {
 	const s = severityMeta(e.severity);
-	const parts = [`🏢 Edificio afectado (${s.label}): ${e.place}`];
+	const parts = [`Edificio afectado (${s.label}): ${e.place}`];
 	if (e?.note?.trim()) parts.push(e.note.trim());
 	parts.push("Mapa de Emergencia y Rescate · Terremoto Venezuela");
 	return parts.join(" — ");
 }
 
-// Todos los edificios usan el mismo marcador de "Edificación" 🏢 (mismo estilo
+// Todos los edificios usan el mismo marcador de "Edificación" (mismo estilo
 // que los reportes tipo building). La severidad va como dato en el popup.
 const buildingMeta = REPORT_TYPES.building;
+const BuildingIcon = REPORT_TYPE_ICON_COMPONENT.building;
 const edificioIcon = L.divIcon({
 	className: "emergency-marker",
-	html: `<span class="emergency-pin" style="background:${buildingMeta.color}"><span class="emergency-pin__icon">${buildingMeta.icon}</span></span>`,
+	html: `<span class="emergency-pin" style="background:${buildingMeta.color}"><span class="emergency-pin__icon">${reportTypeSvg("building")}</span></span>`,
 	iconSize: [34, 34],
 	iconAnchor: [17, 34],
 	popupAnchor: [0, -30],
@@ -48,7 +53,12 @@ export default function EdificiosAfectadosLayer() {
 						<Popup>
 							<div className="space-y-1.5 text-sm">
 								<p className="flex items-center gap-1.5 font-semibold">
-									<span aria-hidden>{buildingMeta.icon}</span>
+									<BuildingIcon
+										aria-hidden
+										className="h-4 w-4"
+										style={{ color: buildingMeta.color }}
+										strokeWidth={2.4}
+									/>
 									<span>Edificio afectado</span>
 								</p>
 								<p className="font-medium">{e.place}</p>

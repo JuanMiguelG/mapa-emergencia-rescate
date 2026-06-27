@@ -1,7 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Camera,
+  LoaderCircle,
+  LocateFixed,
+  Map,
+  MapPin,
+  Siren,
+  X,
+} from "lucide-react";
 import { REPORT_TYPES, REPORT_TYPE_KEYS, type ReportType } from "@/lib/types";
+import { REPORT_TYPE_ICON_COMPONENT } from "@/lib/report-type-icons";
 import { trackEvent } from "./openpanel";
 
 interface ReportFormProps {
@@ -227,8 +237,9 @@ export default function ReportForm({
         className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl outline-none sm:rounded-2xl sm:p-6"
       >
         <div className="mb-3 flex items-start justify-between">
-          <h2 id="form-title" className="text-lg font-bold text-slate-900">
-            🚨 Reportar Emergencia / Solicitar Ayuda
+          <h2 id="form-title" className="flex items-center gap-2 text-lg font-bold text-slate-900">
+            <Siren aria-hidden className="h-5 w-5 text-red-600" strokeWidth={2.4} />
+            Reportar Emergencia / Solicitar Ayuda
           </h2>
           <button
             type="button"
@@ -237,7 +248,7 @@ export default function ReportForm({
             aria-label="Cerrar"
             className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700"
           >
-            ×
+            <X aria-hidden className="h-4 w-4" strokeWidth={2.4} />
           </button>
         </div>
 
@@ -249,7 +260,8 @@ export default function ReportForm({
           }`}
         >
           <p className="mb-2 flex flex-wrap items-center gap-1.5 text-xs font-semibold text-slate-700">
-            <span aria-hidden>📍</span> Ubicación del reporte
+            <MapPin aria-hidden className="h-3.5 w-3.5 text-red-600" strokeWidth={2.4} />
+            Ubicación del reporte
             <span
               className={`font-normal ${coords ? "text-slate-500" : "text-amber-700"}`}
             >
@@ -265,7 +277,8 @@ export default function ReportForm({
                 onClick={onPickOnMap}
                 className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
               >
-                🗺️ Elegir en el mapa
+                <Map aria-hidden className="h-3.5 w-3.5 text-sky-700" strokeWidth={2.4} />
+                Elegir en el mapa
               </button>
             )}
             {onCoordsChange && (
@@ -276,7 +289,25 @@ export default function ReportForm({
                 disabled={locating}
                 className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
               >
-                {locating ? "Localizando…" : "🛰️ Usar mi ubicación"}
+                {locating ? (
+                  <>
+                    <LoaderCircle
+                      aria-hidden
+                      className="h-3.5 w-3.5 animate-spin text-slate-500"
+                      strokeWidth={2.4}
+                    />
+                    Localizando…
+                  </>
+                ) : (
+                  <>
+                    <LocateFixed
+                      aria-hidden
+                      className="h-3.5 w-3.5 text-blue-700"
+                      strokeWidth={2.4}
+                    />
+                    Usar mi ubicación
+                  </>
+                )}
               </button>
             )}
             {coords && onClearLocation && (
@@ -286,7 +317,8 @@ export default function ReportForm({
                 aria-label="Quitar la ubicación elegida"
                 className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
               >
-                ✕ Quitar
+                <X aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
+                Quitar
               </button>
             )}
           </div>
@@ -305,6 +337,7 @@ export default function ReportForm({
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {REPORT_TYPE_KEYS.map((key) => {
                 const meta = REPORT_TYPES[key];
+                const TypeIcon = REPORT_TYPE_ICON_COMPONENT[key];
                 const active = type === key;
                 return (
                   <label
@@ -331,11 +364,11 @@ export default function ReportForm({
                       className="sr-only"
                     />
                     <span
-                      className="grid h-10 w-10 place-items-center rounded-full text-xl text-white shadow-sm"
+                      className="grid h-10 w-10 place-items-center rounded-full text-white shadow-sm"
                       style={{ background: meta.color }}
                       aria-hidden
                     >
-                      {meta.icon}
+                      <TypeIcon className="h-5 w-5" strokeWidth={2.5} />
                     </span>
                     <span className="font-semibold leading-tight text-slate-800">
                       {meta.label}
@@ -427,7 +460,7 @@ export default function ReportForm({
                 />
               ) : (
                 <div className="grid h-20 w-20 place-items-center rounded-lg bg-slate-100 text-2xl text-slate-400">
-                  📷
+                  <Camera aria-hidden className="h-7 w-7" strokeWidth={2.2} />
                 </div>
               )}
               <div className="flex flex-col gap-1">

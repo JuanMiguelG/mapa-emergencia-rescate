@@ -1,10 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  CircleCheck,
+  UserRoundSearch,
+  type LucideIcon,
+} from "lucide-react";
 import MissingPersons from "./MissingPersons";
 import FoundPersons from "./FoundPersons";
 
 type Tab = "desaparecidas" | "localizados";
+
+function tabFromHash(hash: string): Tab | null {
+  if (hash === "desaparecidas" || hash === "reportar-desaparecido") {
+    return "desaparecidas";
+  }
+  if (hash === "localizados") return "localizados";
+  return null;
+}
 
 function usePeopleTotals() {
   const [missing, setMissing] = useState<number | null>(null);
@@ -48,16 +61,14 @@ export default function PersonsTabs() {
 
   useEffect(() => {
     const hash = window.location.hash.replace("#", "");
-    if (hash === "localizados" || hash === "desaparecidas") {
-      setActive(hash);
-    }
+    const nextTab = tabFromHash(hash);
+    if (nextTab) setActive(nextTab);
   }, []);
 
   const handleHashChange = useCallback(() => {
     const hash = window.location.hash.replace("#", "");
-    if (hash === "localizados" || hash === "desaparecidas") {
-      setActive(hash);
-    }
+    const nextTab = tabFromHash(hash);
+    if (nextTab) setActive(nextTab);
   }, []);
 
   useEffect(() => {
@@ -65,64 +76,85 @@ export default function PersonsTabs() {
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, [handleHashChange]);
 
-  const tabs: { id: Tab; label: string; icon: string; count: number | null; color: string; activeColor: string; badgeColor: string }[] = [
+  const tabs: {
+    id: Tab;
+    label: string;
+    shortLabel: string;
+    Icon: LucideIcon;
+    count: number | null;
+    activeColor: string;
+    iconColor: string;
+    badgeColor: string;
+  }[] = [
     {
       id: "desaparecidas",
       label: "Personas desaparecidas",
-      icon: "🧍",
+      shortLabel: "Desaparecidas",
+      Icon: UserRoundSearch,
       count: missing,
-      color: "text-slate-600 hover:text-slate-900 hover:bg-slate-50",
-      activeColor: "text-purple-700 bg-purple-50 border-purple-300",
+      activeColor: "bg-white text-purple-800 shadow-sm",
+      iconColor: "text-purple-700",
       badgeColor: "bg-purple-100 text-purple-800",
     },
     {
       id: "localizados",
       label: "Personas localizadas a salvo",
-      icon: "💚",
+      shortLabel: "Localizados",
+      Icon: CircleCheck,
       count: found,
-      color: "text-slate-600 hover:text-slate-900 hover:bg-slate-50",
-      activeColor: "text-emerald-700 bg-emerald-50 border-emerald-300",
+      activeColor: "bg-white text-emerald-800 shadow-sm",
+      iconColor: "text-emerald-700",
       badgeColor: "bg-emerald-100 text-emerald-800",
     },
   ];
 
   return (
     <section id="desaparecidas" className="mx-auto w-full max-w-7xl px-4 pb-14">
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex border-b border-slate-200">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => {
-                setActive(tab.id);
-                window.history.replaceState(null, "", `#${tab.id}`);
-              }}
-              className={`flex flex-1 items-center justify-center gap-2 px-4 py-3.5 text-sm font-semibold transition border-b-2 ${
-                active === tab.id
-                  ? tab.activeColor
-                  : `${tab.color} border-transparent`
-              }`}
-            >
-              <span aria-hidden>{tab.icon}</span>
-              <span className="hidden sm:inline">{tab.label}</span>
-              <span className="sm:hidden">
-                {tab.id === "desaparecidas" ? "Desaparecidas" : "Localizados"}
-              </span>
-              {tab.count !== null && (
-                <span
-                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold ${
-                    active === tab.id ? "bg-white/80 text-inherit" : tab.badgeColor
+      <span id="localizados" className="sr-only" aria-hidden />
+      <div className="rounded-2xl bg-white p-3 shadow-md shadow-slate-200/80 sm:p-4">
+        <div className="grid gap-2 rounded-xl bg-slate-50 p-1 sm:grid-cols-2">
+          {tabs.map((tab) => {
+            const Icon = tab.Icon;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => {
+                  setActive(tab.id);
+                  window.history.replaceState(null, "", `#${tab.id}`);
+                }}
+                className={`flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-bold transition ${
+                  active === tab.id
+                    ? tab.activeColor
+                    : "text-slate-600 hover:bg-white/70 hover:text-slate-900"
+                }`}
+              >
+                <Icon
+                  aria-hidden
+                  className={`h-4 w-4 shrink-0 ${
+                    active === tab.id ? tab.iconColor : "text-slate-400"
                   }`}
-                >
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
+                  strokeWidth={2.4}
+                />
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.shortLabel}</span>
+                {tab.count !== null && (
+                  <span
+                    className={`inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-xs font-bold ${
+                      active === tab.id
+                        ? tab.badgeColor
+                        : "bg-white text-slate-600"
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="p-4 sm:p-6">
+        <div className="pt-4">
           {active === "desaparecidas" ? <MissingPersons /> : <FoundPersons />}
         </div>
       </div>

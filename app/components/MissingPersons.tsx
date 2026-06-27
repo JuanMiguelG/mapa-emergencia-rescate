@@ -1,6 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Clock,
+  DatabaseZap,
+  ImageOff,
+  MapPin,
+  PhoneCall,
+  Plus,
+  RefreshCw,
+  Search,
+  SearchX,
+  UserRoundSearch,
+  X,
+} from "lucide-react";
 import MissingPersonForm, {
   type MissingPersonPayload,
 } from "./MissingPersonForm";
@@ -39,6 +52,14 @@ const PAGE_SIZE = 48;
 const MIN_SEARCH_LEN = 3;
 const ADMIN_STORAGE_KEY = "emergency:adminToken";
 
+function initialPersonSearch(): string {
+  if (typeof window === "undefined") return "";
+  const search = new URLSearchParams(window.location.search)
+    .get("personSearch")
+    ?.trim();
+  return search && search.length >= MIN_SEARCH_LEN ? search : "";
+}
+
 function extractPhone(contact: string): string | null {
   const digits = contact.replace(/[^\d+]/g, "");
   return digits.replace(/\D/g, "").length >= 7 ? digits : null;
@@ -60,7 +81,7 @@ export default function MissingPersons() {
   const [totalCapped, setTotalCapped] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [page, setPage] = useState(1);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialPersonSearch);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [adminToken, setAdminToken] = useState<string | null>(null);
@@ -265,27 +286,40 @@ export default function MissingPersons() {
     debouncedQuery.trim().length < MIN_SEARCH_LEN;
 
   return (
-    <div ref={listTopRef} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+    <div ref={listTopRef} className="bg-white">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex min-w-0 gap-3">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-purple-50 text-purple-700">
+            <UserRoundSearch
+              aria-hidden
+              className="h-5 w-5"
+              strokeWidth={2.5}
+            />
+          </span>
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-bold text-slate-900">
-                🧍 Personas desaparecidas
+              <h2 className="text-lg font-black text-slate-950 sm:text-xl">
+                Personas desaparecidas
               </h2>
               <span
-                className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-semibold text-purple-800"
+                className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-1 text-xs font-bold text-purple-800"
                 aria-label={`${total} personas reportadas`}
                 title="Total de personas reportadas"
               >
                 {total} reportada{total === 1 ? "" : "s"}
               </span>
             </div>
-            <p className="mt-1 text-sm text-slate-600">
-              Lista de personas que se buscan tras el terremoto. Si reconoces a
-              alguien o tienes información, contacta a la persona indicada.
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
+              Si reconoces a alguien o tienes información, abre su tarjeta y
+              contacta a la persona indicada.
             </p>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
-              <span>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <span className="inline-flex items-center gap-1.5">
+                <Clock
+                  aria-hidden
+                  className="h-3.5 w-3.5"
+                  strokeWidth={2.4}
+                />
                 {lastFetchAt
                   ? `Actualizada ${timeAgo(lastFetchAt, now)}`
                   : "Actualizando…"}
@@ -294,61 +328,96 @@ export default function MissingPersons() {
                 type="button"
                 onClick={() => load(true)}
                 disabled={refreshing}
-                className="rounded-md border border-slate-200 px-2 py-0.5 font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1 font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-60"
               >
-                {refreshing ? "🔄 Cargando…" : "🔄 Refrescar"}
+                <RefreshCw
+                  aria-hidden
+                  className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
+                  strokeWidth={2.4}
+                />
+                {refreshing ? "Cargando" : "Refrescar"}
               </button>
             </div>
           </div>
-          {!isSearching && (
-            <button
-              type="button"
-              onClick={() => {
-                trackMissingReportStarted("missing_persons_header");
-                setShowForm(true);
-              }}
-              className="shrink-0 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700"
-            >
-              + Reportar desaparecida
-            </button>
-          )}
         </div>
-
-        <div className="relative mt-4">
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por nombre, zona o descripción…"
-            aria-label="Buscar personas desaparecidas"
-            className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-slate-900"
-          />
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-            🔎
-          </span>
-        </div>
-
-        {queryTooShort && (
-          <p className="mt-3 text-xs font-medium text-slate-500">
-            Escribe al menos {MIN_SEARCH_LEN} letras para buscar.
-          </p>
-        )}
-
-        {isSearching && (
-          <p
-            aria-live="polite"
-            className="mt-3 text-xs font-medium text-slate-500"
+        {!isSearching && (
+          <button
+            type="button"
+            onClick={() => {
+              trackMissingReportStarted("missing_persons_header");
+              setShowForm(true);
+            }}
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-red-700"
           >
-            {totalCapped ? `${total}+` : total} resultado{total === 1 ? "" : "s"} para “{debouncedQuery.trim()}”
-          </p>
+            <Plus aria-hidden className="h-4 w-4" strokeWidth={2.6} />
+            Reportar desaparecida
+          </button>
         )}
+      </div>
 
-        {people.length === 0 ? (
-          <div className="mt-6 rounded-xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-            <p>
+      <div className="relative mt-4">
+        <Search
+          aria-hidden
+          className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+          strokeWidth={2.4}
+        />
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar por nombre, zona o descripción…"
+          aria-label="Buscar personas desaparecidas"
+          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-10 text-sm font-medium outline-none transition placeholder:text-slate-400 focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-slate-100"
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            aria-label="Limpiar búsqueda"
+            className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+          >
+            <X aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+          </button>
+        )}
+      </div>
+
+      {queryTooShort && (
+        <p className="mt-3 text-xs font-bold text-slate-500">
+          Escribe al menos {MIN_SEARCH_LEN} letras para buscar.
+        </p>
+      )}
+
+      {isSearching && (
+        <p
+          aria-live="polite"
+          className="mt-3 text-xs font-bold text-slate-500"
+        >
+          {totalCapped ? `${total}+` : total} resultado
+          {total === 1 ? "" : "s"} para “{debouncedQuery.trim()}”
+        </p>
+      )}
+
+      {people.length === 0 ? (
+        <div className="mt-5 flex items-start gap-3 rounded-xl bg-slate-50 px-4 py-5 text-sm text-slate-600">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-white text-purple-700 shadow-sm">
+            {isSearching ? (
+              <SearchX aria-hidden className="h-5 w-5" strokeWidth={2.4} />
+            ) : (
+              <UserRoundSearch
+                aria-hidden
+                className="h-5 w-5"
+                strokeWidth={2.4}
+              />
+            )}
+          </span>
+          <div>
+            <p className="font-bold text-slate-950">
+              {isSearching ? "Sin resultados" : "Sin personas reportadas"}
+            </p>
+            <p className="mt-1 leading-6">
               {isSearching
                 ? `No se encontraron personas para “${debouncedQuery.trim()}”.`
-                : "Aún no hay personas reportadas. Usa el botón para agregar la primera."}
+                : "Cuando alguien reporte una persona desaparecida, aparecerá aquí con su foto, datos y contacto."}
             </p>
             {isSearching && (
               <button
@@ -358,196 +427,219 @@ export default function MissingPersons() {
                   trackMissingReportStarted("missing_empty_state");
                   setShowForm(true);
                 }}
-                className="mt-4 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
+                className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-700"
               >
-                Reportar desaparecido
+                <Plus aria-hidden className="h-4 w-4" strokeWidth={2.6} />
+                Reportar desaparecida
               </button>
             )}
           </div>
-        ) : (
-          <>
-            <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {people.map((person) => {
-                const phone = extractPhone(person.contact);
-                return (
-                  <li
-                    key={person.id}
-                    className="relative overflow-hidden rounded-xl border border-slate-200 transition hover:border-slate-300 hover:shadow-sm"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        trackPersonDetailViewed({
-                          status: person.status,
-                          hasPhoto: Boolean(person.photoUrl),
-                          source: "missing_card",
-                        });
-                        setSelected(person);
-                      }}
-                      aria-label={`Ver detalle de ${person.name}`}
-                      className="flex w-full gap-3 p-3 text-left transition active:bg-slate-50"
-                    >
-                      {person.photoUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={person.photoUrl}
-                          alt={`Foto de ${person.name}`}
-                          loading="lazy"
-                          className="h-24 w-24 shrink-0 rounded-lg object-cover ring-1 ring-slate-200"
-                        />
-                      ) : (
-                        <div className="grid h-24 w-24 shrink-0 place-items-center rounded-lg bg-slate-100 text-3xl text-slate-400">
-                          🧍
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="pr-6 font-semibold text-slate-900">
-                          {person.name}
-                          {person.age !== null && (
-                            <span className="font-normal text-slate-500">
-                              {" "}
-                              · {person.age} años
-                            </span>
-                          )}
-                        </p>
-                        {person.lastSeen && (
-                          <p className="mt-0.5 text-xs text-slate-600">
-                            📍 {person.lastSeen}
-                          </p>
-                        )}
-                        {person.description && (
-                          <p className="mt-1 line-clamp-3 text-xs text-slate-600">
-                            {person.description}
-                          </p>
-                        )}
-                        {person.contact &&
-                          (phone ? (
-                            <a
-                              href={`tel:${phone}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="mt-1 inline-block text-xs font-medium text-red-700 hover:underline"
-                            >
-                              📞 {person.contact}
-                            </a>
-                          ) : (
-                            <p className="mt-1 text-xs font-medium text-slate-700">
-                              {person.contact}
-                            </p>
-                          ))}
-                        <p className="mt-1 text-[11px] text-slate-400">
-                          Toca para ver más
-                        </p>
-                      </div>
-                    </button>
-                    {adminToken && (
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(person.id)}
-                        aria-label="Eliminar reporte"
-                        className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-md bg-white/80 text-slate-400 backdrop-blur hover:bg-red-50 hover:text-red-600"
-                      >
-                        ×
-                      </button>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-
-            {totalPages > 1 && (
-              <nav
-                className="mt-6 flex flex-wrap items-center justify-center gap-1.5"
-                aria-label="Paginación de personas desaparecidas"
-              >
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                  className="rounded-md border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+        </div>
+      ) : (
+        <>
+          <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {people.map((person) => {
+              const phone = extractPhone(person.contact);
+              return (
+                <li
+                  key={person.id}
+                  className="relative overflow-hidden rounded-xl bg-white shadow-sm shadow-slate-200/80 transition hover:shadow-md"
                 >
-                  ← Anterior
-                </button>
-                {pages[0] > 1 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setPage(1)}
-                      className="rounded-md border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
-                    >
-                      1
-                    </button>
-                    {pages[0] > 2 && (
-                      <span className="px-1 text-slate-400">…</span>
-                    )}
-                  </>
-                )}
-                {pages.map((p) => (
                   <button
-                    key={p}
                     type="button"
-                    onClick={() => setPage(p)}
-                    aria-current={p === page ? "page" : undefined}
-                    className={
-                      p === page
-                        ? "rounded-md bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white"
-                        : "rounded-md border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
-                    }
+                    onClick={() => {
+                      trackPersonDetailViewed({
+                        status: person.status,
+                        hasPhoto: Boolean(person.photoUrl),
+                        source: "missing_card",
+                      });
+                      setSelected(person);
+                    }}
+                    aria-label={`Ver detalle de ${person.name}`}
+                    className="flex w-full gap-3 p-3 text-left transition hover:bg-slate-50/70 active:bg-slate-100"
                   >
-                    {p}
-                  </button>
-                ))}
-                {pages[pages.length - 1] < totalPages && (
-                  <>
-                    {pages[pages.length - 1] < totalPages - 1 && (
-                      <span className="px-1 text-slate-400">…</span>
+                    {person.photoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={person.photoUrl}
+                        alt={`Foto de ${person.name}`}
+                        loading="lazy"
+                        className="h-24 w-24 shrink-0 rounded-lg bg-slate-100 object-cover"
+                      />
+                    ) : (
+                      <div className="grid h-24 w-24 shrink-0 place-items-center rounded-lg bg-purple-50 text-purple-700">
+                        <ImageOff
+                          aria-hidden
+                          className="h-6 w-6"
+                          strokeWidth={2.4}
+                        />
+                      </div>
                     )}
+                    <div className="min-w-0 flex-1">
+                      <p className="pr-6 text-sm font-bold text-slate-950">
+                        {person.name}
+                        {person.age !== null && (
+                          <span className="font-normal text-slate-500">
+                            {" "}
+                            · {person.age} años
+                          </span>
+                        )}
+                      </p>
+                      {person.lastSeen && (
+                        <p className="mt-1 inline-flex items-start gap-1.5 text-xs text-slate-600">
+                          <MapPin
+                            aria-hidden
+                            className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600"
+                            strokeWidth={2.4}
+                          />
+                          <span>{person.lastSeen}</span>
+                        </p>
+                      )}
+                      {person.description && (
+                        <p className="mt-1 line-clamp-3 text-xs text-slate-600">
+                          {person.description}
+                        </p>
+                      )}
+                      {person.contact &&
+                        (phone ? (
+                          <a
+                            href={`tel:${phone}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-2 py-1 text-xs font-bold text-red-700 transition hover:bg-red-100"
+                          >
+                            <PhoneCall
+                              aria-hidden
+                              className="h-3.5 w-3.5"
+                              strokeWidth={2.4}
+                            />
+                            {person.contact}
+                          </a>
+                        ) : (
+                          <p className="mt-2 text-xs font-bold text-slate-700">
+                            {person.contact}
+                          </p>
+                        ))}
+                      <p className="mt-2 text-[11px] font-bold text-purple-700">
+                        Toca para ver más
+                      </p>
+                    </div>
+                  </button>
+                  {adminToken && (
                     <button
                       type="button"
-                      onClick={() => setPage(totalPages)}
-                      className="rounded-md border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                      onClick={() => handleDelete(person.id)}
+                      aria-label="Eliminar reporte"
+                      className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-lg bg-white/90 text-slate-400 shadow-sm backdrop-blur transition hover:bg-red-50 hover:text-red-600"
                     >
-                      {totalPages}
+                      <X aria-hidden className="h-4 w-4" strokeWidth={2.4} />
                     </button>
-                  </>
-                )}
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+
+          {totalPages > 1 && (
+            <nav
+              className="mt-6 flex flex-wrap items-center justify-center gap-1.5"
+              aria-label="Paginación de personas desaparecidas"
+            >
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="rounded-lg bg-slate-50 px-3 py-1.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-40"
+              >
+                ← Anterior
+              </button>
+              {pages[0] > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setPage(1)}
+                    className="rounded-lg bg-slate-50 px-3 py-1.5 text-sm font-bold text-slate-600 hover:bg-slate-100"
+                  >
+                    1
+                  </button>
+                  {pages[0] > 2 && (
+                    <span className="px-1 text-slate-400">…</span>
+                  )}
+                </>
+              )}
+              {pages.map((p) => (
                 <button
+                  key={p}
                   type="button"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                  className="rounded-md border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+                  onClick={() => setPage(p)}
+                  aria-current={p === page ? "page" : undefined}
+                  className={
+                    p === page
+                      ? "rounded-lg bg-slate-950 px-3 py-1.5 text-sm font-bold text-white"
+                      : "rounded-lg bg-slate-50 px-3 py-1.5 text-sm font-bold text-slate-600 hover:bg-slate-100"
+                  }
                 >
-                  Siguiente →
+                  {p}
                 </button>
-              </nav>
-            )}
-            <p className="mt-3 text-center text-[11px] text-slate-400">
-              Página {page} de {totalPages}
-            </p>
-          </>
-        )}
-
-        {!persistent && (
-          <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-            Modo demo: los reportes no se están guardando de forma permanente.
+              ))}
+              {pages[pages.length - 1] < totalPages && (
+                <>
+                  {pages[pages.length - 1] < totalPages - 1 && (
+                    <span className="px-1 text-slate-400">…</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setPage(totalPages)}
+                    className="rounded-lg bg-slate-50 px-3 py-1.5 text-sm font-bold text-slate-600 hover:bg-slate-100"
+                  >
+                    {totalPages}
+                  </button>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="rounded-lg bg-slate-50 px-3 py-1.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-40"
+              >
+                Siguiente →
+              </button>
+            </nav>
+          )}
+          <p className="mt-3 text-center text-[11px] text-slate-400">
+            Página {page} de {totalPages}
           </p>
-        )}
+        </>
+      )}
 
-        {showForm && (
-          <MissingPersonForm
-            onCancel={() => setShowForm(false)}
-            onSubmit={handleSubmit}
+      {!persistent && (
+        <p className="mt-4 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900 shadow-sm shadow-amber-100/80">
+          <DatabaseZap
+            aria-hidden
+            className="mt-0.5 h-4 w-4 shrink-0 text-amber-700"
+            strokeWidth={2.4}
           />
-        )}
+          <span>
+            Modo demo: los reportes no se están guardando de forma permanente.
+          </span>
+        </p>
+      )}
 
-        {selected && (
-          <MissingPersonDetail
-            person={selected}
-            people={people}
-            onNavigate={setSelected}
-            onClose={() => setSelected(null)}
-            onMarkFound={(payload) => handleMarkFound(selected.id, payload)}
-          />
-        )}
-      </div>
+      {showForm && (
+        <MissingPersonForm
+          onCancel={() => setShowForm(false)}
+          onSubmit={handleSubmit}
+        />
+      )}
+
+      {selected && (
+        <MissingPersonDetail
+          person={selected}
+          people={people}
+          onNavigate={setSelected}
+          onClose={() => setSelected(null)}
+          onMarkFound={(payload) => handleMarkFound(selected.id, payload)}
+        />
+      )}
+    </div>
   );
 }

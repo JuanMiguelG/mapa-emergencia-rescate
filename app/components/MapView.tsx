@@ -15,6 +15,11 @@ import Supercluster, { type ClusterProperties, type AnyProps } from "supercluste
 import { REPORT_TYPES, type EmergencyReport, type ReportType } from "@/lib/types";
 import { timeAgo } from "@/lib/format";
 import { xShareHref, whatsappShareHref } from "@/lib/share";
+import { MapPin } from "lucide-react";
+import {
+  REPORT_TYPE_ICON_COMPONENT,
+  reportTypeSvg,
+} from "@/lib/report-type-icons";
 import LinkText from "./LinkText";
 import type { MissingMapMarker } from "@/lib/missing";
 import EdificiosAfectadosLayer from "./EdificiosAfectadosLayer";
@@ -42,7 +47,7 @@ function markerIcon(type: ReportType): L.DivIcon {
   const meta = REPORT_TYPES[type];
   const icon = L.divIcon({
     className: "emergency-marker",
-    html: `<span class="emergency-pin" style="background:${meta.color}"><span class="emergency-pin__icon">${meta.icon}</span></span>`,
+    html: `<span class="emergency-pin" style="background:${meta.color}"><span class="emergency-pin__icon">${reportTypeSvg(type)}</span></span>`,
     iconSize: [34, 34],
     iconAnchor: [17, 34],
     popupAnchor: [0, -30],
@@ -143,6 +148,7 @@ function MissingClusterLayer({
         }
 
         const p = props as MissingProps;
+        const MissingIcon = REPORT_TYPE_ICON_COMPONENT.missing;
         const [jLat, jLng] = jitterPosition(p.id, lat, lng);
         const markerId = `missing:${p.id}`;
         return (
@@ -157,7 +163,14 @@ function MissingClusterLayer({
           >
             <Popup>
               <div className="space-y-1.5 text-sm">
-                <p className="font-semibold">{REPORT_TYPES.missing.emoji} Se busca</p>
+                <p className="inline-flex items-center gap-1.5 font-semibold">
+                  <MissingIcon
+                    aria-hidden
+                    className="h-4 w-4 text-purple-700"
+                    strokeWidth={2.4}
+                  />
+                  Se busca
+                </p>
                 {p.photoUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -172,7 +185,14 @@ function MissingClusterLayer({
                   <p className="text-xs text-slate-600">{p.age} años</p>
                 )}
                 {p.lastSeen && (
-                  <p className="text-slate-600">📍 {p.lastSeen}</p>
+                  <p className="inline-flex items-start gap-1.5 text-slate-600">
+                    <MapPin
+                      aria-hidden
+                      className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600"
+                      strokeWidth={2.4}
+                    />
+                    <span>{p.lastSeen}</span>
+                  </p>
                 )}
                 <a
                   href="#desaparecidas"
@@ -280,10 +300,16 @@ function ResizeHandler() {
   useEffect(() => {
     const invalidate = () => map.invalidateSize();
     const timeout = setTimeout(invalidate, 200);
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(invalidate)
+        : null;
+    resizeObserver?.observe(map.getContainer());
     window.addEventListener("resize", invalidate);
     window.addEventListener("orientationchange", invalidate);
     return () => {
       clearTimeout(timeout);
+      resizeObserver?.disconnect();
       window.removeEventListener("resize", invalidate);
       window.removeEventListener("orientationchange", invalidate);
     };
@@ -391,7 +417,9 @@ export default function MapView({
         <MissingClusterLayer markers={missingMarkers} markerRefs={markerRefs} />
       )}
 
-      {reports.map((report) => (
+      {reports.map((report) => {
+        const TypeIcon = REPORT_TYPE_ICON_COMPONENT[report.type];
+        return (
         <Marker
           key={report.id}
           position={[report.lat, report.lng]}
@@ -403,8 +431,14 @@ export default function MapView({
         >
           <Popup>
             <div className="space-y-1.5 text-sm">
-              <p className="font-semibold">
-                {REPORT_TYPES[report.type].emoji} {REPORT_TYPES[report.type].label}
+              <p className="inline-flex items-center gap-1.5 font-semibold">
+                <TypeIcon
+                  aria-hidden
+                  className="h-4 w-4"
+                  style={{ color: REPORT_TYPES[report.type].color }}
+                  strokeWidth={2.4}
+                />
+                {REPORT_TYPES[report.type].label}
               </p>
               {report.photoUrl && (
                 <a href={report.photoUrl} target="_blank" rel="noopener noreferrer" aria-label="Ver foto en grande">
@@ -481,7 +515,8 @@ export default function MapView({
             </div>
           </Popup>
         </Marker>
-      ))}
+        );
+      })}
 
       {draft && <Marker position={[draft.lat, draft.lng]} icon={draftIcon} />}
     </MapContainer>

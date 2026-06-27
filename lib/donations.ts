@@ -5,6 +5,7 @@ export {
   PAYPAL_DONATION_URL,
   MIN_DONATION_CENTS,
   MAX_DONATION_CENTS,
+  buildPaypalDonationUrl,
   validateDonationInput,
   formatDonationUsd,
 } from "./donation-shared";

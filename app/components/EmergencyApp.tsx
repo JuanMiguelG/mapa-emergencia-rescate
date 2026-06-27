@@ -4,6 +4,25 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  CheckCircle2,
+  Clock,
+  CloudUpload,
+  DatabaseZap,
+  Inbox,
+  Lock,
+  MapPin,
+  MapPinned,
+  Maximize2,
+  Minimize2,
+  Search,
+  Share2,
+  ShieldCheck,
+  TriangleAlert,
+  UsersRound,
+  WifiOff,
+  X,
+} from "lucide-react";
+import {
   REPORT_TYPES,
   REPORT_TYPE_KEYS,
   type EmergencyReport,
@@ -20,6 +39,7 @@ import {
   EDIFICIOS_SOURCE_URL,
 } from "@/lib/edificios";
 import type { MissingMapMarker, MissingStats } from "@/lib/missing";
+import { REPORT_TYPE_ICON_COMPONENT } from "@/lib/report-type-icons";
 import type { MapBounds } from "./MapView";
 import {
   countPending,
@@ -186,8 +206,36 @@ export default function EmergencyApp() {
     [],
   );
   const mapBoundsRef = useRef<MapBounds | null>(null);
+  const mapShellRef = useRef<HTMLDivElement | null>(null);
+  const [mapFullscreen, setMapFullscreen] = useState(false);
 
   const isAdmin = Boolean(adminToken);
+
+  const syncMapSize = useCallback(() => {
+    window.setTimeout(() => window.dispatchEvent(new Event("resize")), 80);
+    window.setTimeout(() => window.dispatchEvent(new Event("resize")), 280);
+  }, []);
+
+  const exitMapFullscreen = useCallback(() => {
+    setMapFullscreen(false);
+    if (document.fullscreenElement === mapShellRef.current) {
+      document.exitFullscreen().catch(() => null);
+    }
+    syncMapSize();
+  }, [syncMapSize]);
+
+  const toggleMapFullscreen = useCallback(() => {
+    const entering = !mapFullscreen;
+    setMapFullscreen(entering);
+
+    if (entering) {
+      mapShellRef.current?.requestFullscreen?.().catch(() => null);
+    } else if (document.fullscreenElement === mapShellRef.current) {
+      document.exitFullscreen().catch(() => null);
+    }
+
+    syncMapSize();
+  }, [mapFullscreen, syncMapSize]);
 
   // Refresca el reloj cada 30 s para que las etiquetas "hace X min" se mantengan
   // al día sin tener que recargar los reportes desde el servidor.
@@ -203,7 +251,8 @@ export default function EmergencyApp() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
-      if (placing) setPlacing(false);
+      if (mapFullscreen) exitMapFullscreen();
+      else if (placing) setPlacing(false);
       else if (reportOpen) {
         setReportOpen(false);
         setDraft(null);
@@ -213,7 +262,29 @@ export default function EmergencyApp() {
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [placing, reportOpen, showAdminLogin]);
+  }, [exitMapFullscreen, mapFullscreen, placing, reportOpen, showAdminLogin]);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      const active = document.fullscreenElement === mapShellRef.current;
+      setMapFullscreen(active);
+      syncMapSize();
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+    };
+  }, [syncMapSize]);
+
+  useEffect(() => {
+    if (!mapFullscreen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    syncMapSize();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mapFullscreen, syncMapSize]);
 
   const loginAdmin = useCallback((token: string) => {
     sessionStorage.setItem(ADMIN_STORAGE_KEY, token);
@@ -630,10 +701,14 @@ export default function EmergencyApp() {
       {pendingCount > 0 && (
         <div
           role="status"
-          className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-900"
+          className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-900 shadow-sm shadow-amber-100/80"
         >
           <span className="flex items-center gap-2">
-            <span aria-hidden>📡</span>
+            <CloudUpload
+              aria-hidden
+              className="h-4 w-4 shrink-0 text-amber-700"
+              strokeWidth={2.4}
+            />
             <span>
               {pendingCount === 1
                 ? "1 reporte sin enviar"
@@ -651,17 +726,28 @@ export default function EmergencyApp() {
         </div>
       )}
       {network.isConstrained && (
-        <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          {network.isOnline
-            ? `Conexión lenta: actualizando cada ${Math.round(
-                network.pollIntervalMs / 1000,
-              )} s para ahorrar datos.`
-            : "Sin conexión: mostrando datos guardados cuando estén disponibles."}
+        <div className="mb-3 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900 shadow-sm shadow-amber-100/80">
+          <WifiOff
+            aria-hidden
+            className="mt-0.5 h-4 w-4 shrink-0 text-amber-700"
+            strokeWidth={2.4}
+          />
+          <span>
+            {network.isOnline
+              ? `Conexión lenta: actualizando cada ${Math.round(
+                  network.pollIntervalMs / 1000,
+                )} s para ahorrar datos.`
+              : "Sin conexión: mostrando datos guardados cuando estén disponibles."}
+          </span>
         </div>
       )}
-      <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 text-xs text-slate-600 shadow-sm shadow-slate-200/80">
         <span className="flex items-center gap-2">
-          <span aria-hidden>⚠️</span>
+          <TriangleAlert
+            aria-hidden
+            className="h-4 w-4 shrink-0 text-amber-600"
+            strokeWidth={2.4}
+          />
           <span>
             <strong className="font-semibold text-slate-900">
               Riesgo sísmico:
@@ -677,10 +763,32 @@ export default function EmergencyApp() {
         </Link>
       </div>
       <div
-        className={`map-shell relative h-[72vh] min-h-[500px] w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm ${
-          placing ? "is-placing" : ""
-        }`}
+        ref={mapShellRef}
+        className={`map-shell relative w-full overflow-hidden bg-white ${
+          mapFullscreen
+            ? "fixed inset-0 z-[3000] h-[100dvh] min-h-0 rounded-none border-0 shadow-none"
+            : "h-[72vh] min-h-[500px] rounded-2xl border border-slate-200 shadow-sm"
+        } ${placing ? "is-placing" : ""}`}
+        data-map-fullscreen={mapFullscreen ? "true" : "false"}
+        aria-label={mapFullscreen ? "Mapa en pantalla completa" : undefined}
       >
+        <button
+          type="button"
+          onClick={toggleMapFullscreen}
+          aria-label={mapFullscreen ? "Salir de pantalla completa" : "Ver mapa en pantalla completa"}
+          title={mapFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+          className="absolute bottom-3 left-3 z-[1250] inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-white/95 px-3 text-sm font-bold text-slate-800 shadow-lg ring-1 ring-black/10 transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+        >
+          {mapFullscreen ? (
+            <Minimize2 aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+          ) : (
+            <Maximize2 aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+          )}
+          <span className="hidden lg:inline">
+            {mapFullscreen ? "Salir" : "Pantalla completa"}
+          </span>
+        </button>
+
         <MapView
           reports={mapReports}
           missingMarkers={missingMapMarkers}
@@ -701,7 +809,7 @@ export default function EmergencyApp() {
 
 
         {/* Controles flotantes: buscador de direcciones + chips de filtro por tipo */}
-        <div className="map-overlay pointer-events-none absolute inset-x-0 top-0 z-[1000] flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:pr-14">
+        <div className="map-overlay pointer-events-none absolute inset-x-0 top-0 z-[1000] flex flex-col gap-2 p-3 pr-14 sm:flex-row sm:items-center">
           <div className="pointer-events-auto w-full max-w-sm sm:shrink-0">
             <AddressSearch
               onSelect={handleAddressSelect}
@@ -715,6 +823,7 @@ export default function EmergencyApp() {
           >
             {(Object.keys(REPORT_TYPES) as ReportType[]).map((type) => {
               const meta = REPORT_TYPES[type];
+              const TypeIcon = REPORT_TYPE_ICON_COMPONENT[type];
               const active = selectedTypes.has(type);
               return (
                 <button
@@ -735,7 +844,7 @@ export default function EmergencyApp() {
                     style={{ background: meta.color }}
                     aria-hidden
                   >
-                    {meta.icon}
+                    <TypeIcon aria-hidden className="h-4 w-4" strokeWidth={2.5} />
                   </span>
                   <span className="tabular-nums">
                     {formatCount(counts[type])}
@@ -760,9 +869,7 @@ export default function EmergencyApp() {
             />
             <div className="pointer-events-auto absolute inset-x-0 top-0 z-[1200] flex items-center justify-between gap-3 bg-slate-900 px-4 py-3 text-white shadow-lg">
               <span className="flex items-center gap-2 text-sm font-semibold">
-                <span aria-hidden className="text-base">
-                  📍
-                </span>
+                <MapPin aria-hidden className="h-4 w-4" strokeWidth={2.4} />
                 Toca el mapa para ubicar el reporte
               </span>
               <button
@@ -786,7 +893,7 @@ export default function EmergencyApp() {
               title="Compartir el mapa"
               className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-base text-slate-600 transition hover:bg-slate-100"
             >
-              {shareCopied ? "✓" : "🔗"}
+              {shareCopied ? "✓" : <Share2 aria-hidden className="h-4 w-4" strokeWidth={2.4} />}
             </button>
             <button
               type="button"
@@ -800,121 +907,154 @@ export default function EmergencyApp() {
       </div>
 
       {/* Lista de reportes: separada del mapa, full-width, siempre debajo */}
-      <div className="mt-5">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-[11px] text-slate-500" aria-live="polite">
-                {missingStats
-                  ? `Desaparecidos activos: ${missingStats.active.toLocaleString("es-VE")}`
-                  : "Cargando…"}
-                {" · "}
-                {reports.length} en el mapa
-              </p>
-              {isAdmin ? (
-                <button
-                  type="button"
-                  onClick={logoutAdmin}
-                  className="shrink-0 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
-                  title="Cerrar sesión de administrador"
-                >
-                  Admin ✓ · Salir
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setShowAdminLogin(true)}
-                  className="shrink-0 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
-                >
-                  🔒 Admin
-                </button>
-              )}
-            </div>
-
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div
-              className="flex flex-wrap items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 text-xs"
-              role="group"
-              aria-label="Filtrar por antigüedad"
+      <div className="mt-5 rounded-2xl bg-white p-3 shadow-md shadow-slate-200/80 sm:p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600" aria-live="polite">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-2.5 py-1 text-purple-800">
+              <UsersRound aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
+              {missingStats
+                ? `${missingStats.active.toLocaleString("es-VE")} desaparecidos activos`
+                : "Cargando desaparecidos"}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-slate-700">
+              <MapPinned aria-hidden className="h-3.5 w-3.5 text-red-600" strokeWidth={2.4} />
+              {reports.length} en el mapa
+            </span>
+          </div>
+          {isAdmin ? (
+            <button
+              type="button"
+              onClick={logoutAdmin}
+              className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100"
+              title="Cerrar sesión de administrador"
             >
-              {(Object.keys(TIME_FILTER_LABELS) as TimeFilter[]).map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setTimeFilter(key)}
-                  aria-pressed={timeFilter === key}
-                  className={`flex-1 rounded-lg px-3 py-1.5 font-medium transition sm:flex-none ${
-                    timeFilter === key
-                      ? "bg-slate-900 text-white"
-                      : "text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  {TIME_FILTER_LABELS[key]}
-                </button>
-              ))}
-            </div>
+              <ShieldCheck aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
+              Admin · Salir
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowAdminLogin(true)}
+              className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
+            >
+              <Lock aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
+              Admin
+            </button>
+          )}
+        </div>
 
-            <div className="relative flex-1">
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar por nombre, sector, zona o necesidad…"
-                aria-label="Buscar reportes"
-                className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-9 pr-9 text-sm outline-none focus:border-slate-900"
-              />
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                🔎
-              </span>
-              {query && (
-                <button
-                  type="button"
-                  onClick={() => setQuery("")}
-                  aria-label="Limpiar búsqueda"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full px-2 py-0.5 text-slate-400 hover:text-slate-700"
-                >
-                  ×
-                </button>
-              )}
-            </div>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div
+            className="flex flex-wrap items-center gap-1 rounded-xl bg-slate-50 p-1 text-xs"
+            role="group"
+            aria-label="Filtrar por antigüedad"
+          >
+            {(Object.keys(TIME_FILTER_LABELS) as TimeFilter[]).map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTimeFilter(key)}
+                aria-pressed={timeFilter === key}
+                className={`flex-1 rounded-lg px-3 py-1.5 font-bold transition sm:flex-none ${
+                  timeFilter === key
+                    ? "bg-slate-950 text-white shadow-sm"
+                    : "text-slate-600 hover:bg-white"
+                }`}
+              >
+                {TIME_FILTER_LABELS[key]}
+              </button>
+            ))}
           </div>
 
-          <div className="mt-3 max-h-[70vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2">
+          <div className="relative flex-1">
+            <Search
+              aria-hidden
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              strokeWidth={2.4}
+            />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar por nombre, sector, zona o necesidad…"
+              aria-label="Buscar reportes"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-9 text-sm font-medium outline-none transition placeholder:text-slate-400 focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-slate-100"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label="Limpiar búsqueda"
+                className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              >
+                <X aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-3 max-h-[70vh] overflow-y-auto rounded-xl bg-slate-50 p-2">
             {selectedTypes.has("missing") &&
               missingStats &&
               missingStats.active > 0 && (
-              <div className="mb-2 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-xs text-purple-900">
-                Hay{" "}
-                <strong>{missingStats.active.toLocaleString("es-VE")}</strong>{" "}
-                personas desaparecidas en la base consolidada. En el mapa se
-                muestran las que tienen ubicación geocodificada (
-                {missingStats.onMap.toLocaleString("es-VE")}).{" "}
-                <a href="#desaparecidas" className="font-semibold underline">
-                  Ver lista completa →
-                </a>
+              <div className="mb-2 flex items-start gap-2 rounded-lg bg-purple-50 px-3 py-2 text-xs text-purple-900">
+                <UsersRound
+                  aria-hidden
+                  className="mt-0.5 h-4 w-4 shrink-0 text-purple-700"
+                  strokeWidth={2.4}
+                />
+                <p>
+                  Hay{" "}
+                  <strong>{missingStats.active.toLocaleString("es-VE")}</strong>{" "}
+                  personas desaparecidas en la base consolidada. En el mapa se
+                  muestran las que tienen ubicación geocodificada (
+                  {missingStats.onMap.toLocaleString("es-VE")}).{" "}
+                  <a href="#desaparecidas" className="font-bold underline">
+                    Ver lista completa →
+                  </a>
+                </p>
               </div>
             )}
             {selectedTypes.has("building") && (
-              <div className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                En el mapa hay <strong>{EDIFICIOS_COUNT}</strong> edificios de{" "}
-                <a
-                  href={EDIFICIOS_SOURCE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-semibold underline"
-                >
-                  {EDIFICIOS_SOURCE_LABEL}
-                </a>{" "}
-                (solo lectura; toca uno para ver el daño). Abajo, los reportados
-                por usuarios.
+              <div className="mb-2 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                <MapPinned
+                  aria-hidden
+                  className="mt-0.5 h-4 w-4 shrink-0 text-amber-700"
+                  strokeWidth={2.4}
+                />
+                <p>
+                  En el mapa hay <strong>{EDIFICIOS_COUNT}</strong> edificios de{" "}
+                  <a
+                    href={EDIFICIOS_SOURCE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold underline"
+                  >
+                    {EDIFICIOS_SOURCE_LABEL}
+                  </a>{" "}
+                  (solo lectura; toca uno para ver el daño). Abajo, los reportados
+                  por usuarios.
+                </p>
               </div>
             )}
             {visibleReports.length === 0 ? (
-              <p className="p-4 text-sm text-slate-500">
-                {query.trim()
-                  ? `No se encontraron reportes para “${query.trim()}”.`
-                  : selectedTypes.size === 0
-                    ? "Selecciona un tipo en los chips de arriba para ver reportes."
-                    : `Aún no hay reportes${allTypesSelected ? "" : " de los tipos seleccionados"}. Usa el botón "+ Reportar" para crear el primero.`}
-              </p>
+              <div className="flex items-start gap-3 rounded-xl bg-white px-4 py-5 text-sm text-slate-600 shadow-sm">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-slate-50 text-slate-500">
+                  <Inbox aria-hidden className="h-5 w-5" strokeWidth={2.3} />
+                </span>
+                <div>
+                  <p className="font-bold text-slate-900">
+                    {query.trim() ? "Sin resultados" : "Sin reportes visibles"}
+                  </p>
+                  <p className="mt-1 leading-6">
+                    {query.trim()
+                      ? `No se encontraron reportes para “${query.trim()}”.`
+                      : selectedTypes.size === 0
+                        ? "Selecciona un tipo en los chips de arriba para ver reportes."
+                        : `Aún no hay reportes${allTypesSelected ? "" : " de los tipos seleccionados"}. Usa el botón "+ Reportar" para crear el primero.`}
+                  </p>
+                </div>
+              </div>
             ) : (
               <>
                 {(query.trim() || !allTypesSelected) && (
@@ -926,10 +1066,12 @@ export default function EmergencyApp() {
                   </p>
                 )}
                 <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                {visibleReports.map((report) => (
+                {visibleReports.map((report) => {
+                  const TypeIcon = REPORT_TYPE_ICON_COMPONENT[report.type];
+                  return (
                   <li
                     key={report.id}
-                    className="relative rounded-xl border border-slate-200"
+                    className="relative overflow-hidden rounded-xl bg-white shadow-sm shadow-slate-200/80 transition hover:shadow-md"
                   >
                     {/* Toda la card (incluida el área libre) enfoca el reporte
                         en el mapa; los botones de acción quedan por encima. */}
@@ -937,7 +1079,7 @@ export default function EmergencyApp() {
                       type="button"
                       onClick={() => handleFocusReport(report)}
                       aria-label={`Ver ${report.place} en el mapa`}
-                      className="absolute inset-0 rounded-xl transition hover:bg-slate-50 active:bg-slate-100"
+                      className="absolute inset-0 rounded-xl transition hover:bg-slate-50/70 active:bg-slate-100"
                     />
                     <div className="pointer-events-none relative flex items-start justify-between gap-2 p-3">
                       <div className="flex min-w-0 flex-1 items-start gap-2">
@@ -947,12 +1089,18 @@ export default function EmergencyApp() {
                             src={report.photoUrl}
                             alt=""
                             loading="lazy"
-                            className="h-12 w-12 shrink-0 rounded-md object-cover ring-1 ring-slate-200"
+                            className="h-12 w-12 shrink-0 rounded-lg bg-slate-100 object-cover"
                           />
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-slate-900">
-                            {REPORT_TYPES[report.type].emoji} {report.place}
+                          <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+                            <TypeIcon
+                              aria-hidden
+                              className="h-3.5 w-3.5 shrink-0"
+                              style={{ color: REPORT_TYPES[report.type].color }}
+                              strokeWidth={2.5}
+                            />
+                            <span className="min-w-0 truncate">{report.place}</span>
                           </p>
                           {report.affected > 0 && (
                             <p className="text-xs text-slate-600">
@@ -968,7 +1116,10 @@ export default function EmergencyApp() {
                               "es-VE",
                             )}
                           >
-                            🕒 {timeAgo(report.createdAt, now)}
+                            <span className="inline-flex items-center gap-1">
+                              <Clock aria-hidden className="h-3 w-3" strokeWidth={2.4} />
+                              {timeAgo(report.createdAt, now)}
+                            </span>
                           </p>
                         </div>
                       </div>
@@ -987,10 +1138,10 @@ export default function EmergencyApp() {
                               ? "Ya confirmaste este reporte"
                               : "Yo también veo esto"
                           }
-                          className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold transition ${
+                          className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition ${
                             confirmed.has(report.id)
-                              ? "border-slate-200 bg-slate-100 text-slate-500"
-                              : "border-sky-200 bg-white text-sky-700 hover:bg-sky-50"
+                              ? "bg-slate-100 text-slate-500"
+                              : "bg-sky-50 text-sky-700 hover:bg-sky-100"
                           }`}
                         >
                           ✓ +{report.confirmations}
@@ -999,7 +1150,7 @@ export default function EmergencyApp() {
                           <button
                             type="button"
                             onClick={() => handleResolve(report.id)}
-                            className="rounded-md border border-emerald-200 bg-white px-2 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-50"
+                            className="rounded-lg bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700 transition hover:bg-emerald-100"
                           >
                             Atendido
                           </button>
@@ -1007,18 +1158,26 @@ export default function EmergencyApp() {
                       </div>
                     </div>
                   </li>
-                ))}
+                  );
+                })}
                 </ul>
               </>
             )}
-            </div>
+        </div>
       </div>
 
       {!persistent && (
-        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Modo demo: los reportes no se están guardando de forma permanente.
-          Conecta la base de datos (Neon) en Vercel para compartirlos entre
-          todos los usuarios.
+        <p className="mt-3 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900 shadow-sm shadow-amber-100/80">
+          <DatabaseZap
+            aria-hidden
+            className="mt-0.5 h-4 w-4 shrink-0 text-amber-700"
+            strokeWidth={2.4}
+          />
+          <span>
+            Modo demo: los reportes no se están guardando de forma permanente.
+            Conecta la base de datos (Neon) en Vercel para compartirlos entre
+            todos los usuarios.
+          </span>
         </p>
       )}
 
@@ -1044,10 +1203,14 @@ export default function EmergencyApp() {
       {queuedFlash && (
         <div
           role="status"
-          className="fixed inset-x-0 bottom-4 z-[2500] mx-auto w-fit max-w-[92%] rounded-full bg-slate-900 px-4 py-2 text-center text-sm font-medium text-white shadow-lg"
+          className="fixed inset-x-0 bottom-4 z-[2500] mx-auto flex w-fit max-w-[92%] items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-center text-sm font-medium text-white shadow-lg"
         >
-          ✅ Reporte guardado. Se enviará automáticamente cuando vuelva la
-          conexión.
+          <CheckCircle2
+            aria-hidden
+            className="h-4 w-4 shrink-0 text-emerald-300"
+            strokeWidth={2.4}
+          />
+          <span>Reporte guardado. Se enviará automáticamente cuando vuelva la conexión.</span>
         </div>
       )}
     </section>

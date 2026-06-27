@@ -7,6 +7,18 @@ import {
   useRef,
   useState,
 } from "react";
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  ImageOff,
+  ListChecks,
+  MapPin,
+  Plus,
+  SearchX,
+  UserRoundSearch,
+  UsersRound,
+} from "lucide-react";
 import MissingPersonForm, {
   type MissingPersonPayload,
 } from "./MissingPersonForm";
@@ -139,44 +151,65 @@ export default function MissingPersonsCarousel() {
   }, [fetchPeople]);
 
   const preview = people.slice(0, MAX_PREVIEW);
+  const hiddenCount = Math.max(0, total - preview.length);
+  const formattedTotal = total.toLocaleString("es-VE");
 
   return (
     <section
       id="desaparecidas-preview"
-      className="border-b border-slate-200 bg-gradient-to-b from-purple-50/60 to-white"
+      className="border-b border-slate-200 bg-white"
     >
-      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:py-10">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+      <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:py-9">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">
-                🧍 Personas desaparecidas
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-purple-50 text-purple-700">
+                <UserRoundSearch aria-hidden className="h-4 w-4" strokeWidth={2.4} />
+              </span>
+              <h2 className="text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
+                Personas desaparecidas
               </h2>
               <span
-                className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-semibold text-purple-800"
+                className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-800"
                 aria-label={`${total} personas reportadas`}
               >
-                {total} reportada{total === 1 ? "" : "s"}
+                <UsersRound aria-hidden className="h-3.5 w-3.5" strokeWidth={2.4} />
+                {formattedTotal} reportada{total === 1 ? "" : "s"}
               </span>
             </div>
-            <p className="mt-1 max-w-2xl text-sm text-slate-600">
-              Ayúdanos a localizarlas. Si reconoces a alguien o tienes
-              información, contacta a la persona indicada en la tarjeta.
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              Si reconoces a alguien o tienes información, abre su tarjeta y
+              contacta a la persona indicada.
+            </p>
+            <p className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600">
+              <MapPin
+                aria-hidden
+                className="h-3.5 w-3.5 text-purple-700"
+                strokeWidth={2.3}
+              />
+              Foto, datos y último lugar visto.
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700"
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm shadow-red-600/20 transition hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
             >
-              <span aria-hidden>＋</span> Reportar desaparecida
+              <Plus aria-hidden className="h-4 w-4" strokeWidth={2.6} />
+              Reportar desaparecida
             </button>
             <a
               href="#desaparecidas"
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-slate-50 px-5 py-2.5 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500"
             >
-              Ver lista completa →
+              <ListChecks
+                aria-hidden
+                className="h-4 w-4 text-purple-700"
+                strokeWidth={2.4}
+              />
+              Ver lista completa
+              <ArrowRight aria-hidden className="h-3.5 w-3.5" strokeWidth={2.5} />
             </a>
           </div>
         </div>
@@ -187,9 +220,9 @@ export default function MissingPersonsCarousel() {
               type="button"
               aria-label="Desplazar a la izquierda"
               onClick={() => scrollBy(-1)}
-              className="absolute left-0 top-1/2 z-10 hidden -translate-y-1/2 rounded-full border border-slate-200 bg-white p-2 text-slate-700 shadow-md transition hover:bg-slate-50 sm:block"
+              className="absolute left-0 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg shadow-slate-900/10 transition hover:bg-slate-50 sm:grid"
             >
-              ◀
+              <ChevronLeft aria-hidden className="h-6 w-6" strokeWidth={2.5} />
             </button>
           )}
           {canScrollRight && (
@@ -197,27 +230,29 @@ export default function MissingPersonsCarousel() {
               type="button"
               aria-label="Desplazar a la derecha"
               onClick={() => scrollBy(1)}
-              className="absolute right-0 top-1/2 z-10 hidden -translate-y-1/2 rounded-full border border-slate-200 bg-white p-2 text-slate-700 shadow-md transition hover:bg-slate-50 sm:block"
+              className="absolute right-0 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg shadow-slate-900/10 transition hover:bg-slate-50 sm:grid"
             >
-              ▶
+              <ChevronRight aria-hidden className="h-6 w-6" strokeWidth={2.5} />
             </button>
           )}
 
           <div
             ref={scrollerRef}
-            className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 sm:gap-4 [scrollbar-width:thin]"
+            className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 sm:gap-4 [scrollbar-width:thin]"
             role="list"
           >
             {preview.length === 0 ? (
               <div
-                className="flex w-[260px] shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-center text-slate-500"
+                className="flex w-[190px] shrink-0 snap-start flex-col items-center justify-center gap-2.5 rounded-xl bg-slate-50 p-5 text-center text-slate-600 sm:w-[220px]"
                 role="listitem"
               >
-                <span className="text-2xl">🙏</span>
-                <p className="text-sm font-medium">
+                <span className="grid h-11 w-11 place-items-center rounded-full bg-white text-purple-700 shadow-sm">
+                  <SearchX aria-hidden className="h-5 w-5" strokeWidth={2.2} />
+                </span>
+                <p className="text-sm font-bold text-slate-900">
                   Aún no hay reportes
                 </p>
-                <p className="text-xs">
+                <p className="text-xs leading-5">
                   Sé el primero en compartir información para localizar a
                   alguien.
                 </p>
@@ -228,68 +263,79 @@ export default function MissingPersonsCarousel() {
                   key={person.id}
                   type="button"
                   onClick={() => setSelected(person)}
-                  className="group flex w-[160px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition hover:border-purple-300 hover:shadow-md sm:w-[180px]"
+                  className="group flex w-[178px] shrink-0 snap-start flex-col overflow-hidden rounded-xl bg-white text-left shadow-md shadow-slate-200/80 transition hover:shadow-lg hover:shadow-purple-950/10 sm:w-[205px]"
                   role="listitem"
                 >
-                  <div className="relative aspect-square w-full overflow-hidden bg-slate-100">
+                  <div className="relative aspect-[5/4] w-full overflow-hidden bg-slate-100">
                     {person.photoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={person.photoUrl}
                         alt={`Foto de ${person.name}`}
                         loading="lazy"
-                        className="h-full w-full object-cover transition group-hover:scale-105"
+                        className="h-full w-full object-cover object-center transition duration-300 group-hover:scale-105"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-4xl text-slate-300">
-                        🧍
+                      <div className="flex h-full w-full items-center justify-center text-slate-300">
+                        <ImageOff aria-hidden className="h-9 w-9" strokeWidth={1.8} />
                       </div>
                     )}
-                    <span className="absolute left-2 top-2 rounded-full bg-purple-600/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                    <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-purple-700 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow-sm">
+                      <UserRoundSearch
+                        aria-hidden
+                        className="h-3 w-3"
+                        strokeWidth={2.5}
+                      />
                       Se busca
                     </span>
                   </div>
-                  <div className="flex flex-1 flex-col gap-1 p-3">
+                  <div className="flex flex-1 flex-col gap-1.5 p-3">
                     <p
-                      className="line-clamp-1 text-sm font-semibold text-slate-900"
+                      className="line-clamp-1 text-base font-black leading-tight text-slate-950"
                       title={person.name}
                     >
                       {person.name}
                     </p>
                     {person.age !== null && (
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-xs font-semibold text-slate-500">
                         {person.age} años
                       </p>
                     )}
                     {person.lastSeen && (
                       <p
-                        className="line-clamp-2 text-[11px] text-slate-600"
+                        className="line-clamp-2 inline-flex items-start gap-1.5 text-xs leading-5 text-slate-600"
                         title={person.lastSeen}
                       >
-                        📍 {person.lastSeen}
+                        <MapPin
+                          aria-hidden
+                          className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600"
+                          strokeWidth={2.3}
+                        />
+                        <span>{person.lastSeen}</span>
                       </p>
                     )}
-                    <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-purple-700">
-                      Ver detalles →
+                    <span className="mt-auto inline-flex items-center gap-1.5 pt-1 text-xs font-extrabold text-purple-700">
+                      Ver detalles
+                      <ArrowRight aria-hidden className="h-3.5 w-3.5" strokeWidth={2.5} />
                     </span>
                   </div>
                 </button>
               ))
             )}
 
-            {total > preview.length && (
+            {hiddenCount > 0 && (
               <a
                 href="#desaparecidas"
-                className="flex w-[160px] shrink-0 snap-start flex-col items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white p-4 text-center text-slate-700 shadow-sm transition hover:border-purple-300 hover:bg-purple-50 sm:w-[180px]"
+                className="flex w-[178px] shrink-0 snap-start flex-col items-center justify-center gap-2.5 rounded-xl bg-purple-50 p-4 text-center text-purple-900 shadow-sm transition hover:bg-purple-100 sm:w-[205px]"
                 role="listitem"
               >
-                <span className="grid h-12 w-12 place-items-center rounded-full bg-purple-100 text-2xl text-purple-700">
-                  →
+                <span className="grid h-11 w-11 place-items-center rounded-full bg-white text-purple-700 shadow-sm">
+                  <ArrowRight aria-hidden className="h-5 w-5" strokeWidth={2.4} />
                 </span>
-                <span className="text-sm font-semibold">
-                  Ver {total - preview.length} más
+                <span className="text-base font-black">
+                  Ver {hiddenCount.toLocaleString("es-VE")} más
                 </span>
-                <span className="text-[11px] text-slate-500">
+                <span className="text-xs font-semibold text-purple-700">
                   Ir a la lista completa
                 </span>
               </a>

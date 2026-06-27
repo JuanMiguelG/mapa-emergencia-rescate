@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { HeroDesktopNav, MobileStickyNav } from "./SectionNav";
+import { HeroDesktopNav, MobileStickyNav, MobileTopHeader } from "./SectionNav";
 import SiteFooter from "./SiteFooter";
 
 interface SubPageShellProps {
@@ -16,20 +16,21 @@ export default function SubPageShell({
   return (
     <>
       <main id="main" className="flex-1 bg-slate-50 md:pt-16">
-      <HeroDesktopNav />
+        <MobileTopHeader />
+        <HeroDesktopNav />
 
-      <div className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex w-full max-w-7xl items-center gap-2 px-4 py-3 text-sm text-slate-500">
-          <Link href="/" className="hover:text-slate-700 hover:underline">
-            ← Inicio
-          </Link>
-          <span aria-hidden>/</span>
-          <span className="truncate text-slate-700">{breadcrumb}</span>
+        <div className="border-b border-slate-200 bg-white">
+          <div className="mx-auto flex w-full max-w-7xl items-center gap-2 px-4 py-3 text-sm text-slate-500">
+            <Link href="/" className="hover:text-slate-700 hover:underline">
+              ← Inicio
+            </Link>
+            <span aria-hidden>/</span>
+            <span className="truncate text-slate-700">{breadcrumb}</span>
+          </div>
         </div>
-      </div>
 
-      <div className="pb-12">{children}</div>
-    </main>
+        <div className="pb-12">{children}</div>
+      </main>
 
       <SiteFooter />
       <MobileStickyNav />

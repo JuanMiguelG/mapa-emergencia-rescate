@@ -53,3 +53,10 @@ export function formatDonationUsd(amountCents: number): string {
     maximumFractionDigits: amountCents % 100 === 0 ? 0 : 2,
   }).format(amountCents / 100);
 }
+
+export function buildPaypalDonationUrl(amountCents: number): string {
+  const url = new URL(PAYPAL_DONATION_URL);
+  url.searchParams.set("amount", (amountCents / 100).toFixed(2));
+  url.searchParams.set("currency_code", "USD");
+  return url.toString();
+}

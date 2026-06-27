@@ -28,12 +28,17 @@ button:disabled {
 }
 
 body.has-mobile-nav {
-  padding-bottom: calc(3.75rem + env(safe-area-inset-bottom));
+  padding-bottom: calc(4.25rem + env(safe-area-inset-bottom));
+}
+
+body.has-mobile-header {
+  padding-top: calc(5.75rem + env(safe-area-inset-top));
 }
 
 @media (max-width: 767px) {
   main [id] {
-    scroll-margin-bottom: calc(4rem + env(safe-area-inset-bottom));
+    scroll-margin-top: calc(9rem + env(safe-area-inset-top));
+    scroll-margin-bottom: calc(4.5rem + env(safe-area-inset-bottom));
   }
 }
 
@@ -59,6 +64,10 @@ body.mobile-sheet-open [data-sticky-help-root] {
 @media (min-width: 768px) {
   body.has-mobile-nav {
     padding-bottom: 0;
+  }
+
+  body.has-mobile-header {
+    padding-top: 0;
   }
 }
 
@@ -156,6 +165,14 @@ input[type="search"]::-webkit-search-decoration {
   visibility: hidden;
 }
 
+.map-shell:fullscreen,
+.map-shell:-webkit-full-screen {
+  width: 100vw;
+  height: 100dvh;
+  border: 0;
+  border-radius: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .map-overlay {
     transition: none;
@@ -218,6 +235,12 @@ summary {
   line-height: 1;
   color: #ffffff;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+}
+
+.emergency-pin__svg {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 .emergency-pin--draft {

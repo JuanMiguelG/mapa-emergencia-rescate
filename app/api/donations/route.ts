@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import {
-  PAYPAL_DONATION_URL,
+  buildPaypalDonationUrl,
   getDonationStats,
   listRecentDonations,
   recordDonation,
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       id: donation.id,
-      paypalUrl: PAYPAL_DONATION_URL,
+      paypalUrl: buildPaypalDonationUrl(donation.amountCents),
     });
   } catch {
     return NextResponse.json(

@@ -1,6 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Calendar,
+  CircleCheck,
+  HeartHandshake,
+  ImageOff,
+  MapPin,
+} from "lucide-react";
 import MissingPersonDetail from "./MissingPersonDetail";
 import { useLowBandwidthMode } from "./useLowBandwidthMode";
 
@@ -114,173 +121,209 @@ export default function FoundPersons() {
     listTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [page]);
 
-  // El servidor ya ordena por fecha de localización (resolved_at) desc.
-  if (total === 0) {
-    return null;
-  }
-
   const pages = pageWindow(page, totalPages);
 
   return (
-    <div ref={listTopRef} className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 sm:p-6">
-      <div className="mx-auto w-full max-w-7xl px-4 py-10">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+    <div ref={listTopRef} className="bg-white">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex min-w-0 gap-3">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-700">
+            <HeartHandshake
+              aria-hidden
+              className="h-5 w-5"
+              strokeWidth={2.5}
+            />
+          </span>
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-800">
-                <span aria-hidden>✨</span> Buenas noticias
-              </span>
+              <h2 className="text-lg font-black text-slate-950 sm:text-xl">
+                Personas localizadas a salvo
+              </h2>
               <span
-                className="inline-flex items-center rounded-full bg-emerald-600 px-2.5 py-0.5 text-xs font-bold text-white"
+                className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800"
                 aria-label={`${total} personas localizadas`}
               >
                 {total} localizada{total === 1 ? "" : "s"}
               </span>
             </div>
-            <h2 className="mt-2 text-xl font-bold text-slate-900 sm:text-2xl">
-              💚 Personas localizadas a salvo
-            </h2>
-            <p className="mt-1 max-w-2xl text-sm text-slate-600">
-              Familias que volvieron a encontrarse gracias a la comunidad. Cada
-              historia es un recordatorio de que vale la pena seguir buscando.
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
+              Familias que volvieron a encontrarse gracias a la comunidad.
+              Mantener este registro ayuda a cerrar búsquedas y orientar apoyo.
             </p>
           </div>
-          <a
-            href="#desaparecidas"
-            className="shrink-0 self-start rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 sm:self-end"
-          >
-            Ver personas en búsqueda →
-          </a>
         </div>
-
-        <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {people.map((person) => (
-            <li
-              key={person.id}
-              className="relative overflow-hidden rounded-xl border border-emerald-200 transition hover:border-emerald-300 hover:shadow-sm"
-            >
-              <button
-                type="button"
-                onClick={() => setSelected(person)}
-                aria-label={`Ver detalle de ${person.name}`}
-                className="flex w-full gap-3 p-3 text-left transition active:bg-emerald-50/60"
-              >
-                {person.photoUrl ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={person.photoUrl}
-                    alt={`Foto de ${person.name}`}
-                    loading="lazy"
-                    className="h-24 w-24 shrink-0 rounded-lg object-cover ring-1 ring-emerald-200"
-                  />
-                ) : (
-                  <div className="grid h-24 w-24 shrink-0 place-items-center rounded-lg bg-emerald-50 text-3xl text-emerald-300">
-                    💚
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-semibold text-white">
-                    <span aria-hidden>✓</span> Localizado a salvo
-                  </span>
-                  <p className="mt-1 font-semibold text-slate-900">
-                    {person.name}
-                    {person.age !== null && (
-                      <span className="font-normal text-slate-500">
-                        {" "}
-                        · {person.age} años
-                      </span>
-                    )}
-                  </p>
-                  {person.lastSeen && (
-                    <p className="mt-0.5 text-xs text-slate-600">
-                      📍 {person.lastSeen}
-                    </p>
-                  )}
-                  {person.resolvedAt && (
-                    <p className="mt-1 text-xs text-emerald-700">
-                      <span aria-hidden>📅</span>{" "}
-                      {formatDate(person.resolvedAt)}
-                    </p>
-                  )}
-                  <p className="mt-1 text-[11px] text-slate-400">
-                    Toca para ver más
-                  </p>
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
-
-        {totalPages > 1 && (
-          <nav
-            className="mt-6 flex flex-wrap items-center justify-center gap-1.5"
-            aria-label="Paginación de personas localizadas"
-          >
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="rounded-md border border-emerald-200 px-3 py-1.5 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-40"
-            >
-              ← Anterior
-            </button>
-            {pages[0] > 1 && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setPage(1)}
-                  className="rounded-md border border-emerald-200 px-3 py-1.5 text-sm font-medium text-emerald-800 hover:bg-emerald-50"
-                >
-                  1
-                </button>
-                {pages[0] > 2 && (
-                  <span className="px-1 text-slate-400">…</span>
-                )}
-              </>
-            )}
-            {pages.map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPage(p)}
-                aria-current={p === page ? "page" : undefined}
-                className={
-                  p === page
-                    ? "rounded-md bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white"
-                    : "rounded-md border border-emerald-200 px-3 py-1.5 text-sm font-medium text-emerald-800 hover:bg-emerald-50"
-                }
-              >
-                {p}
-              </button>
-            ))}
-            {pages[pages.length - 1] < totalPages && (
-              <>
-                {pages[pages.length - 1] < totalPages - 1 && (
-                  <span className="px-1 text-slate-400">…</span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setPage(totalPages)}
-                  className="rounded-md border border-emerald-200 px-3 py-1.5 text-sm font-medium text-emerald-800 hover:bg-emerald-50"
-                >
-                  {totalPages}
-                </button>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className="rounded-md border border-emerald-200 px-3 py-1.5 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-40"
-            >
-              Siguiente →
-            </button>
-          </nav>
-        )}
-        <p className="mt-3 text-center text-[11px] text-slate-400">
-          Página {page} de {totalPages}
-        </p>
+        <a
+          href="#desaparecidas"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-slate-50 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+        >
+          Ver personas en búsqueda →
+        </a>
       </div>
+
+      {people.length === 0 ? (
+        <div className="mt-5 flex items-start gap-3 rounded-xl bg-slate-50 px-4 py-5 text-sm text-slate-600">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-white text-emerald-700 shadow-sm">
+            <CircleCheck aria-hidden className="h-5 w-5" strokeWidth={2.4} />
+          </span>
+          <div>
+            <p className="font-bold text-slate-950">
+              Aún no hay personas localizadas registradas
+            </p>
+            <p className="mt-1 leading-6">
+              Cuando una búsqueda se marque como localizada, aparecerá aquí para
+              que la comunidad sepa que esa persona ya está a salvo.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {people.map((person) => (
+              <li
+                key={person.id}
+                className="relative overflow-hidden rounded-xl bg-white shadow-sm shadow-emerald-100/80 transition hover:shadow-md"
+              >
+                <button
+                  type="button"
+                  onClick={() => setSelected(person)}
+                  aria-label={`Ver detalle de ${person.name}`}
+                  className="flex w-full gap-3 p-3 text-left transition hover:bg-emerald-50/50 active:bg-emerald-50"
+                >
+                  {person.photoUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={person.photoUrl}
+                      alt={`Foto de ${person.name}`}
+                      loading="lazy"
+                      className="h-24 w-24 shrink-0 rounded-lg bg-slate-100 object-cover"
+                    />
+                  ) : (
+                    <div className="grid h-24 w-24 shrink-0 place-items-center rounded-lg bg-emerald-50 text-emerald-700">
+                      <ImageOff
+                        aria-hidden
+                        className="h-6 w-6"
+                        strokeWidth={2.4}
+                      />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-bold text-white">
+                      <CircleCheck
+                        aria-hidden
+                        className="h-3 w-3"
+                        strokeWidth={2.5}
+                      />
+                      Localizado a salvo
+                    </span>
+                    <p className="mt-1 text-sm font-bold text-slate-950">
+                      {person.name}
+                      {person.age !== null && (
+                        <span className="font-normal text-slate-500">
+                          {" "}
+                          · {person.age} años
+                        </span>
+                      )}
+                    </p>
+                    {person.lastSeen && (
+                      <p className="mt-1 inline-flex items-start gap-1.5 text-xs text-slate-600">
+                        <MapPin
+                          aria-hidden
+                          className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600"
+                          strokeWidth={2.4}
+                        />
+                        <span>{person.lastSeen}</span>
+                      </p>
+                    )}
+                    {person.resolvedAt && (
+                      <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+                        <Calendar
+                          aria-hidden
+                          className="h-3.5 w-3.5"
+                          strokeWidth={2.4}
+                        />
+                        <span>{formatDate(person.resolvedAt)}</span>
+                      </p>
+                    )}
+                    <p className="mt-2 text-[11px] font-bold text-emerald-700">
+                      Toca para ver más
+                    </p>
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          {totalPages > 1 && (
+            <nav
+              className="mt-6 flex flex-wrap items-center justify-center gap-1.5"
+              aria-label="Paginación de personas localizadas"
+            >
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-bold text-emerald-800 transition hover:bg-emerald-100 disabled:opacity-40"
+              >
+                ← Anterior
+              </button>
+              {pages[0] > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setPage(1)}
+                    className="rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-bold text-emerald-800 hover:bg-emerald-100"
+                  >
+                    1
+                  </button>
+                  {pages[0] > 2 && (
+                    <span className="px-1 text-slate-400">…</span>
+                  )}
+                </>
+              )}
+              {pages.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPage(p)}
+                  aria-current={p === page ? "page" : undefined}
+                  className={
+                    p === page
+                      ? "rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-bold text-white"
+                      : "rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-bold text-emerald-800 hover:bg-emerald-100"
+                  }
+                >
+                  {p}
+                </button>
+              ))}
+              {pages[pages.length - 1] < totalPages && (
+                <>
+                  {pages[pages.length - 1] < totalPages - 1 && (
+                    <span className="px-1 text-slate-400">…</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setPage(totalPages)}
+                    className="rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-bold text-emerald-800 hover:bg-emerald-100"
+                  >
+                    {totalPages}
+                  </button>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-bold text-emerald-800 transition hover:bg-emerald-100 disabled:opacity-40"
+              >
+                Siguiente →
+              </button>
+            </nav>
+          )}
+          <p className="mt-3 text-center text-[11px] text-slate-400">
+            Página {page} de {totalPages}
+          </p>
+        </>
+      )}
 
       {selected && (
         <MissingPersonDetail

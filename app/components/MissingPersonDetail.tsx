@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Check, Copy } from "lucide-react";
 import MissingFoundForm, {
   type MissingFoundPayload,
 } from "./MissingFoundForm";
@@ -44,12 +45,45 @@ function shareUrl(_person: MissingPerson): string {
 
 function shareText(person: MissingPerson): string {
   const parts = [
-    `🚨 Buscamos a ${person.name}`,
+    `Buscamos a ${person.name}`,
     person.age !== null ? `${person.age} años.` : null,
     person.lastSeen ? `Visto por última vez en ${person.lastSeen}.` : null,
-    "Si tienes información, ayuda a difundir 🙏",
+    "Si tienes información, ayuda a difundir.",
   ].filter(Boolean);
   return parts.join(" ");
+}
+
+function XLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className={className}>
+      <path
+        fill="currentColor"
+        d="M18.2 2.3h3.3l-7.2 8.3 8.5 11.1h-6.7l-5.2-6.8-6 6.8H1.7l7.7-8.8L1.2 2.3h6.9l4.7 6.2 5.4-6.2Zm-1.2 17.5h1.8L7.1 4.1H5.2l11.8 15.7Z"
+      />
+    </svg>
+  );
+}
+
+function FacebookLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className={className}>
+      <path
+        fill="currentColor"
+        d="M22 12.1C22 6.5 17.5 2 12 2S2 6.5 2 12.1c0 5 3.7 9.2 8.4 9.9v-7H7.9v-2.9h2.5V9.9c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6v1.9h2.8l-.4 2.9h-2.4v7c4.8-.8 8.5-4.9 8.5-10Z"
+      />
+    </svg>
+  );
+}
+
+function InstagramLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className={className}>
+      <path
+        fill="currentColor"
+        d="M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm8.9 1.7a1.4 1.4 0 1 1 0 2.8 1.4 1.4 0 0 1 0-2.8ZM12 7.1a4.9 4.9 0 1 1 0 9.8 4.9 4.9 0 0 1 0-9.8Zm0 2a2.9 2.9 0 1 0 0 5.8 2.9 2.9 0 0 0 0-5.8Z"
+      />
+    </svg>
+  );
 }
 
 export default function MissingPersonDetail({
@@ -366,13 +400,13 @@ export default function MissingPersonDetail({
                 )}&url=${encodeURIComponent(url)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-800 transition hover:bg-slate-50"
               >
                 <span
                   aria-hidden
-                  className="grid h-5 w-5 place-items-center rounded-full bg-slate-900 text-[10px] font-bold text-white"
+                  className="grid h-6 w-6 place-items-center rounded-full bg-slate-950 text-white"
                 >
-                  𝕏
+                  <XLogo className="h-3.5 w-3.5" />
                 </span>
                 X
               </a>
@@ -382,41 +416,50 @@ export default function MissingPersonDetail({
                 )}&quote=${encodeURIComponent(text)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-800 transition hover:bg-slate-50"
               >
                 <span
                   aria-hidden
-                  className="grid h-5 w-5 place-items-center rounded-full bg-[#1877F2] text-[11px] font-bold text-white"
+                  className="grid h-6 w-6 place-items-center rounded-full bg-[#1877F2] text-white"
                 >
-                  f
+                  <FacebookLogo className="h-4 w-4" />
                 </span>
                 Facebook
               </a>
               <button
                 type="button"
                 onClick={nativeShare}
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-800 transition hover:bg-slate-50"
                 title="Compartir en Instagram, WhatsApp u otras apps"
               >
                 <span
                   aria-hidden
-                  className="grid h-5 w-5 place-items-center rounded-full text-[12px]"
+                  className="grid h-6 w-6 place-items-center rounded-full text-white"
                   style={{
                     background:
                       "linear-gradient(45deg, #f09433, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888)",
-                    color: "white",
                   }}
                 >
-                  ◎
+                  <InstagramLogo className="h-4 w-4" />
                 </span>
                 Instagram
               </button>
               <button
                 type="button"
                 onClick={copyShare}
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-800 transition hover:bg-slate-50"
               >
-                <span aria-hidden>🔗</span> {copied ? "Copiado" : "Copiar"}
+                <span
+                  aria-hidden
+                  className="grid h-6 w-6 place-items-center rounded-full bg-slate-50 text-slate-700"
+                >
+                  {copied ? (
+                    <Check className="h-3.5 w-3.5 text-emerald-700" strokeWidth={2.6} />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" strokeWidth={2.4} />
+                  )}
+                </span>
+                {copied ? "Copiado" : "Copiar"}
               </button>
             </div>
           </div>

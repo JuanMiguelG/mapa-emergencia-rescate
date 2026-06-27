@@ -15,11 +15,21 @@ export default function StickyHelpButton() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [clickCount, setClickCount] = useState<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const psychologyUrl = psychologyHelpUrl();
   const psychologyIsExternal = !psychologyUrl.startsWith("mailto:");
 
   useEffect(() => {
+    const media = window.matchMedia("(min-width: 768px)");
+    const sync = () => setIsDesktop(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktop) return;
     let cancelled = false;
     fetch("/api/stats/psychology-help")
       .then((res) => (res.ok ? res.json() : null))
@@ -32,7 +42,7 @@ export default function StickyHelpButton() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isDesktop]);
 
   const trackPsychologyClick = useCallback(() => {
     trackEvent("psychology_help_requested", {
@@ -84,7 +94,7 @@ export default function StickyHelpButton() {
     return () => observer.disconnect();
   }, []);
 
-  if (pathname?.startsWith("/admin")) {
+  if (!isDesktop || pathname?.startsWith("/admin")) {
     return null;
   }
 
@@ -96,7 +106,7 @@ export default function StickyHelpButton() {
     <div
       ref={rootRef}
       data-sticky-help-root
-      className="pointer-events-none fixed bottom-[calc(3.75rem+env(safe-area-inset-bottom))] right-3 z-[1840] flex flex-col items-end gap-3 md:bottom-[max(1rem,env(safe-area-inset-bottom))] md:right-4 md:z-[1900]"
+      className="pointer-events-none fixed bottom-[calc(3.75rem+env(safe-area-inset-bottom))] right-3 z-[1840] hidden flex-col items-end gap-3 md:bottom-[max(1rem,env(safe-area-inset-bottom))] md:right-4 md:z-[1900] md:flex"
     >
       <div
         id="sticky-help-menu"
