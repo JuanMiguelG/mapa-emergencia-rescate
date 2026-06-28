@@ -101,6 +101,7 @@ acción.
 
 ### Arquitectura
 
+- [Arquitectura actual del sistema](architecture/architecture.md)
 - [Despliegue (Hetzner + k3s + OpenTofu)](architecture/despliegue-kubernetes.md)
 
 ### Despliegue y operación

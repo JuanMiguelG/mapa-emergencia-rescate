@@ -6,9 +6,9 @@
 #   - workflow_dispatch     -> deploy manual; eliges target (staging | prod).
 #                              (prod SIEMPRE es un botón deliberado, nunca auto.)
 #
-# Hace: gate de verificación (tsc + eslint + openapi) -> build app+worker ->
-# push a GHCR -> sube estáticos a R2 -> aplica manifests -> migración de esquema
-# gateada -> roll zero-downtime.
+# Hace: gate de verificación (backend/frontend typecheck + lint frontend) ->
+# build frontend+backend -> push a GHCR -> sube estáticos a R2 -> aplica
+# manifests -> migración de esquema gateada -> roll zero-downtime.
 #
 # Las tareas de infraestructura (provision, recreate-master, plan, migrate
 # enqueue) NO viven aquí a propósito — córrelas a mano (tofu/kubectl).
@@ -20,8 +20,8 @@
 # Pre-requisitos (una vez, con provision fuera de este workflow): cluster k3s,
 # secret KUBECONFIG (base64), y los secrets app-env + migrate-env creados.
 #
-# Zero-downtime: lo imponen los manifests (maxUnavailable:0 + readinessProbe
-# /api/readyz) y lo confirma `kubectl rollout status`.
+# Zero-downtime: lo imponen los manifests (maxUnavailable:0 + readinessProbe:
+# frontend por TCP, backend por /api/readyz) y lo confirma `kubectl rollout status`.
 name: Deploy to Hetzner (k3s)
 
 on:
@@ -49,7 +49,8 @@ permissions:
 # repository names and ${{ github.repository }} can contain uppercase.
 
 jobs:
-  # Gate: nada se despliega si el código no compila/lint/genera la spec.
+  # Gate: nada se despliega si backend/frontend no typecheckean o el frontend no
+  # pasa lint.
   verify:
     name: verify
     runs-on: ubuntu-latest
@@ -315,8 +316,8 @@ jobs:
             --from-literal=cluster-config="$CLUSTER_CONFIG_B64" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      # Server-side runtime secrets (NO NEXT_PUBLIC_*): el secreto del proxy
-      # OpenPanel (route.ts) y la contraseña del panel admin (lib/admin.ts).
+      # Server-side runtime secrets (NO NEXT_PUBLIC_*): OpenPanel proxy,
+      # contraseña admin, CORS cross-origin y Turnstile server-side.
       # app-env tiene TODAS las vars de runtime (DATABASE_URL, VALKEY_URL, R2_*,
       # ...) desde provision, así que PATCHEAMOS solo estas claves con un strategic
       # merge — nunca recreamos el secret (borraría el resto). stringData deja que
@@ -398,10 +399,8 @@ jobs:
           kubectl -n mapa delete service app --ignore-not-found
           # service.yaml define DOS Services (web + api) con puertos estáticos;
           # envsubst solo rellena el perfil TLS. La API usa EL MISMO perfil que
-          # web (mismo patrón que el LB actual `app`): TLS lo termina Cloudflare
-          # (proxied) y el LB lleva el Origin cert cf-origin-dreamit; el hostname
-          # api.terremoto… se enruta en CLOUDFLARE (DNS A → mapa-api-lb, proxied),
-          # NO con un cert managed de Hetzner. Por eso no hace falta API_HOST.
+          # web: en prod, PROD_HOST debe cubrir los hostnames servidos por ambos
+          # LB (por ejemplo terremotovenezuela.app,api.terremotovenezuela.app).
           if [ "$TARGET" = "prod" ]; then
             : "${PROD_HOST:?prod target needs the PROD_HOST secret (the public hostname)}"
             export WEB_TLS_ANNOTATIONS=$(printf '    load-balancer.hetzner.cloud/protocol: "https"\n    load-balancer.hetzner.cloud/certificate-type: "managed"\n    load-balancer.hetzner.cloud/http-managed-certificate-domains: "%s"\n    load-balancer.hetzner.cloud/http-redirect-https: "true"' "$PROD_HOST")
@@ -416,7 +415,7 @@ jobs:
           cat /tmp/service.rendered.yaml
 
           kubectl apply -f /tmp/service.rendered.yaml
-          # web + api Deployments (mismo image, parcheado en el paso Roll).
+          # web + api Deployments (imagenes separadas, parcheadas en el paso Roll).
           kubectl apply -f infra/k8s/deployment.yaml
           # HPA por tier (web + api). metrics-server ya está en el clúster.
           kubectl apply -f infra/k8s/hpa.yaml

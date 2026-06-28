@@ -21,7 +21,7 @@ producción. Índice de esta carpeta:
 | Quiero… | Cómo |
 | --- | --- |
 | Desplegar a prod/staging | Workflow **Deploy to Hetzner (k3s)** desde `main` (ver proceso-de-deploy) |
-| Cambiar el esquema de BD | Edita `infra/db/schema.ts` → `npm run db:generate` → commitea el `.sql` → deploy |
-| Documentar un endpoint | Bloque `@swagger` en el route (ver [guía](../guides/documentar-endpoints-openapi.md)); doc en `/api/docs` |
+| Cambiar el esquema de BD | Edita `infra/db/schema.ts` → `cd backend && npm run db:generate` → commitea el `.sql` → deploy |
+| Documentar un endpoint | Bloque `@swagger` en `backend/src/routes/` + artefacto OpenAPI (ver [guía](../guides/documentar-endpoints-openapi.md)) |
 | Provisionar/recrear infra | **Manual** (tofu/kubectl) — ya NO está en el workflow de deploy |
-| Migrar datos Neon→Hetzner / fotos→R2 | Job `migrate-enqueue` manual (ver [worker/README.md](../../worker/README.md)) |
+| Migrar datos Neon→Hetzner / fotos→R2 | Job `migrate-enqueue` manual (ver [backend/worker/README.md](../../backend/worker/README.md)) |

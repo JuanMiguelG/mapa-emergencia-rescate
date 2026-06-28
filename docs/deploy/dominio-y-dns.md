@@ -15,9 +15,11 @@
 ## El camino de una petición (prod)
 
 ```
-usuario → Cloudflare (proxy: TLS edge, caché, bot-fight, WAF)
-        → Hetzner LB (65.109.41.170, "mapa-lb")
-        → pods de la app (k3s) → Next.js
+web: usuario → Cloudflare → Hetzner LB "mapa-lb"
+             → Deployment web (Next.js :3000)
+
+api: navegador / tercero → Cloudflare → Hetzner LB "mapa-api-lb"
+                         → Deployment api (Express :8080)
 ```
 
 ## Registros DNS (en Cloudflare)
@@ -26,9 +28,12 @@ usuario → Cloudflare (proxy: TLS edge, caché, bot-fight, WAF)
 | --- | --- | --- | --- |
 | A | `@` | `65.109.41.170` (LB) | 🟠 Proxied |
 | A | `www` | `65.109.41.170` (LB) | 🟠 Proxied |
+| A | `api` | IP pública del `mapa-api-lb` | 🟠 Proxied |
 
-`65.109.41.170` es el IP público del Hetzner Load Balancer (`mapa-lb`), creado y
-gestionado por el Hetzner CCM a partir del `Service` tipo LoadBalancer.
+`65.109.41.170` es el IP público del Hetzner Load Balancer web (`mapa-lb`),
+creado y gestionado por el Hetzner CCM a partir del `Service` tipo
+LoadBalancer. El IP de `api` lo da el Service `api` (`mapa-api-lb`); verifícalo
+con `kubectl -n mapa get svc api`.
 
 ## TLS
 
@@ -36,7 +41,8 @@ gestionado por el Hetzner CCM a partir del `Service` tipo LoadBalancer.
 - **Origin (Cloudflare ↔ LB):** SSL mode **Full**. El LB sirve su cert; en
   staging es el **Origin cert** de Cloudflare (`cf-origin-dreamit`). En prod, el
   workflow con `target=prod` pide un **cert gestionado Let's Encrypt** para
-  `PROD_HOST`.
+  `PROD_HOST`; como el Service `api` replica el perfil TLS de `web`, ese valor
+  debe cubrir `terremotovenezuela.app` y `api.terremotovenezuela.app`.
 - Endurecer a **Full (strict)** requiere un Cloudflare **Origin cert** para
   `terremotovenezuela.app` subido a Hetzner + cambiar el perfil prod del workflow
   a ese cert. Pendiente/opcional.
@@ -59,8 +65,8 @@ gestionado por el Hetzner CCM a partir del `Service` tipo LoadBalancer.
 dig +short A terremotovenezuela.app @1.1.1.1
 # la cadena autoritativa debe mostrar *.ns.cloudflare.com
 dig +trace NS terremotovenezuela.app
-# health a través de todo el stack
-curl -s https://terremotovenezuela.app/api/readyz   # {"ok":true,"db":"up"}
+# health de la API a través de Cloudflare + LB api
+curl -s https://api.terremotovenezuela.app/api/readyz   # {"ok":true}
 ```
 
 ## Features de Cloudflare (todo en el panel, sin código)
@@ -68,6 +74,6 @@ curl -s https://terremotovenezuela.app/api/readyz   # {"ok":true,"db":"up"}
 - **Bot Fight Mode:** Security → Bots.
 - **Caché:** Caching → Cache Rules. Nota: las fotos se sirven desde R2
   (`bucket-vzla-terremoto.dreamit.software`, su propio CDN/caché), así que las
-  reglas en este dominio aplican sobre todo a respuestas de API.
+  reglas en esta zona aplican sobre todo a respuestas de API.
 - **WAF:** Security → WAF.
 - **Redirect www↔apex:** Rules → Redirect Rules.

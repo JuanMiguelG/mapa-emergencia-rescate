@@ -1,183 +1,191 @@
 # Arquitectura del despliegue (Hetzner + k3s + OpenTofu)
 
-Cómo está desplegada **hoy** la app: infraestructura en Hetzner Cloud
-provisionada con **OpenTofu**, un clúster **k3s** que corre la app y los
-workers, y **Cloudflare** (R2 + CDN + TLS) por delante.
+Cómo está desplegada **hoy** la plataforma: infraestructura en Hetzner Cloud
+provisionada con **OpenTofu**, clúster **k3s**, dos servicios de aplicación
+separados (`frontend` y `backend`), workers BullMQ, y **Cloudflare** delante
+(DNS/CDN/TLS + R2).
 
-> Fuente de verdad de la infra: [`infra/tofu/`](../../infra/tofu/) (servidores,
-> red, firewall) y [`infra/k8s/`](../../infra/k8s/) (manifiestos del clúster).
-> El pipeline que lo aplica: `.github/workflows/deploy-hetzner.yml`.
+> Fuente de verdad de la infra: `infra/tofu/` (servidores, red, firewall) e
+> `infra/k8s/` (manifiestos del clúster). El pipeline que aplica el despliegue
+> de app es `.github/workflows/deploy-hetzner.yml`.
 
 ## Resumen
 
-- **Provisión:** OpenTofu (provider `hcloud`), estado remoto en Hetzner Object
-  Storage (bucket `terremoto-vzla-bucket`, hel1) — NO en R2.
-- **Cómputo:** k3s — 1 master (siempre vivo) + workers EFÍMEROS. No hay workers
-  fijos: `k3s_worker_count` default `0` (`variables.tf`) y el
-  **cluster-autoscaler** es dueño de los workers (pool `--nodes=2:5`, cx23,
-  Debian 12, hel1). Es el estado configurado en los manifiestos y los defaults
-  de tofu; el cutover desde los workers fijos tiene pasos manuales (ver
-  [RFC 0004](../rfcs/0004-autoscaling-y-split-web-api.md)).
-- **Estado (PETs):** Postgres y Valkey en VPS dedicados, nunca recreados.
-- **Red:** privada `10.0.0.0/16` (subnet `10.0.1.0/24`); IPs privadas fijas.
-- **Ingreso:** DOS Hetzner Load Balancers (creados por el CCM): `mapa-lb`
-  (tier=web) y `mapa-api-lb` (tier=api) → NodePort → pods.
-- **Borde:** Cloudflare proxied (naranja), TLS por target (staging en
-  Cloudflare, prod con cert managed de Hetzner en el LB), + R2 para imágenes y
-  assets estáticos de Next.js.
+- **Provisión:** OpenTofu con provider `hcloud`, estado remoto en Hetzner Object
+  Storage (bucket `terremoto-vzla-bucket`, hel1), no en R2.
+- **Cómputo:** k3s con 1 master fijo y workers efímeros manejados por
+  cluster-autoscaler. `k3s_worker_count` tiene default `0`; el pool del CA es
+  `--nodes=2:5`.
+- **Apps:** dos imágenes y dos Deployments:
+  - `web`: imagen `*-frontend:<sha>`, Next standalone en `:3000`.
+  - `api`: imagen `*-backend:<sha>`, Express en `:8080`.
+- **Workers:** `migrate-worker` y el Job `migrate` reutilizan la imagen backend
+  con comandos distintos.
+- **Estado:** Postgres y Valkey viven en VPS dedicados dentro de la red privada.
+- **Ingreso:** dos Services `LoadBalancer`: `web` -> `mapa-lb` y `api` ->
+  `mapa-api-lb`.
+- **Borde:** Cloudflare proxied; R2 sirve fotos y assets estáticos de Next
+  cuando `NEXT_PUBLIC_ASSET_PREFIX` está configurado.
 
-## OpenTofu — infraestructura
+## OpenTofu
 
-Archivos en [`infra/tofu/`](../../infra/tofu/):
+Archivos en `infra/tofu/`:
 
 | Archivo | Qué crea |
 | --- | --- |
 | `network.tf` | Red privada `mapa-net` (`10.0.0.0/16`) + subnet `10.0.1.0/24` |
-| `k3s-master.tf` | Servidor `mapa-master` (control plane, `10.0.1.5`) |
-| `k3s-workers.tf` | Workers FIJOS opcionales (`mapa-worker-N`); `k3s_worker_count` default `0` → no crea nada (los workers los gestiona el CA) |
-| `postgres.tf` | VPS `mapa-postgres` (`10.0.1.10`) + volumen `mapa-pgdata` |
+| `k3s-master.tf` | Servidor `mapa-master` (`10.0.1.5`) |
+| `k3s-workers.tf` | Workers fijos opcionales; default `0` porque manda el autoscaler |
+| `postgres.tf` | VPS `mapa-postgres` (`10.0.1.10`) + volumen |
 | `valkey.tf` | VPS `mapa-valkey` (`10.0.1.11`) |
-| `firewall.tf` | Firewall público: solo `22` (SSH) y `6443` (API k3s para CI) |
-| `ssh.tf` | Clave SSH `mapa-key` registrada en los servidores |
-| `backend.tf` | Estado remoto S3 en Hetzner Object Storage |
-| `versions.tf` | Versiones de Terraform/OpenTofu y del provider `hcloud` |
-| `variables.tf` / `outputs.tf` | Entradas (tokens, IPs, tamaños) y URLs de salida |
-| `cloud-init/*.tftpl` | Bootstrap de cada servidor (k3s, Postgres, Valkey) |
+| `firewall.tf` | Firewall público para SSH y API k3s de CI |
+| `backend.tf` | Estado remoto S3-compatible en Hetzner Object Storage |
+| `cloud-init/*.tftpl` | Bootstrap de k3s, Postgres y Valkey |
 
 Puntos clave:
 
-- **IPs privadas fijas** (`variables.tf`) → `DATABASE_URL`, `VALKEY_URL` y la
-  dirección del master son estables y predecibles.
-- **PETs protegidas:** Postgres y Valkey tienen `prevent_destroy = true` y
-  `ignore_changes = [user_data]` (cloud-init corre solo en el primer boot).
-- **Firewall:** los puertos `5432`/`6379` NO se abren — el firewall de Hetzner
-  solo filtra tráfico **público**; el tráfico de la red privada lo evita por
-  completo. El acceso a la BD se cierra además con `pg_hba.conf`
-  (`mapa_app` solo desde `10.0.0.0/16`, scram-sha-256).
-- **Dos bases en el mismo Postgres:** `app` (interna, datos de la app — aquí
-  viven los datos migrados de Neon) e `imported` (reservada para sync/export).
+- Las IPs privadas fijas mantienen estables `DATABASE_URL`, `VALKEY_URL` y la
+  dirección del master.
+- Postgres y Valkey son PETs protegidas con `prevent_destroy`; no se recrean
+  como parte del deploy normal.
+- La app usa la base `app`. La base `imported` queda reservada para importación
+  y sync.
+- Neon solo queda como origen legado para backfills (`NEON_DATABASE_URL`).
 
-## k3s — clúster
+## k3s
 
-Master configurado para Hetzner (`cloud-init/k3s-master.yaml.tftpl`):
+El master corre k3s con Hetzner CCM externo:
 
-- `--disable-cloud-controller` + `cloud-provider=external` → el **Hetzner CCM**
-  gestiona IPs de nodos y los `Service` tipo LoadBalancer.
-- `--disable traefik servicelb` → usamos el LB de Hetzner, no los de k3s.
-- `--flannel-iface enp7s0` / `node-ip` → el tráfico del clúster va por la red
-  privada (pod CIDR `10.42.0.0/16`).
-- **CCM como Deployment crudo** (no HelmChart): `cloud-provider=external` deja
-  cada nodo con el taint `uninitialized:NoSchedule` hasta que el CCM lo limpia,
-  pero el Job de helm-install no tolera ese taint → deadlock (k3s#1807). El
-  `ccm-networks.yaml` oficial ya tolera el taint + usa `hostNetwork`, así que se
-  despliega crudo vía auto-deploy manifests. `allocate-node-cidrs=false` (flannel
-  ya hace el pod-networking).
-- **tls-san:** el IP público del master se agrega como SAN en el boot (drop-in
-  `config.yaml.d/tls-san.yaml`, leído del metadata de Hetzner) para que el runner
-  de CI valide el cert de la API al conectar por el IP público.
+- `cloud-provider=external` para que el CCM maneje nodos y Load Balancers.
+- `--disable traefik servicelb` para usar LB de Hetzner.
+- Flannel usa la red privada (`enp7s0`).
+- El Cluster Autoscaler de Hetzner crea y destruye workers efímeros cuando los
+  pods quedan pendientes o sobran nodos.
 
-### Cargas en el clúster (`infra/k8s/`)
+## Manifiestos principales
 
-| Manifiesto | Qué es |
+| Manifiesto | Rol |
 | --- | --- |
-| `service.yaml` | Namespace `mapa` + DOS `Service` LoadBalancer, web y api (TEMPLATE; el perfil TLS lo inyecta el workflow con envsubst, puertos estáticos) |
-| `deployment.yaml` | DOS Deployments del MISMO image de Next.js: `web` (tier=web, 3 réplicas) y `api` (tier=api, 3 réplicas). Rolling `maxUnavailable:0` |
-| `hpa.yaml` | HPA por tier: web (min 3 / max 20) y api (min 3 / max 30), señal CPU 60% |
-| `cluster-autoscaler.yaml` | Cluster Autoscaler de Hetzner — escala NODOS (VPS efímeros), pool `--nodes=2:5`, corre en el master |
-| `worker-deployment.yaml` | Workers BullMQ de migración. 2 réplicas, sin Service |
-| `hub-backfill-job.yaml` | Job que rellena datos del hub federado |
-| `migrate-job.yaml` | Job de migraciones Drizzle, gateado antes del roll |
-| `migrate-enqueue-job.yaml` | Job productor que encola la migración |
-| `secret.example.yaml` | Plantilla de los Secrets de runtime (sin valores) |
+| `service.yaml` | Namespace `mapa` + Services `web` y `api` con TLS por target |
+| `deployment.yaml` | Deployments `web` (frontend) y `api` (backend) |
+| `hpa.yaml` | HPA separado por tier (`web` y `api`) |
+| `cluster-autoscaler.yaml` | Autoscaler de nodos Hetzner |
+| `worker-deployment.yaml` | Workers BullMQ con imagen backend |
+| `migrate-job.yaml` | Migraciones Drizzle gateadas antes del rollout |
+| `migrate-enqueue-job.yaml` | Productor manual para backfills/migración de datos |
+| `hub-backfill-job.yaml` | Backfill del hub federado |
+| `secret.example.yaml` | Plantilla de runtime secrets |
 
-- **App** (`deployment.yaml`): "cattle" — pods inmutables, reemplazados en cada
-  deploy. Son DOS Deployments del mismo image (`web` y `api`) para aislar el
-  blast-radius y escalar por separado (HPA propio por tier); el front sigue
-  usando `/api` same-origin. Cero-downtime por `maxUnavailable:0`/`maxSurge:1` +
-  `readinessProbe` `/api/readyz` (chequea la BD) + drenado con
-  `terminationGracePeriodSeconds` (40s). CI parcha el tag de imagen por SHA en
-  AMBOS tiers.
-- **Workers** (`worker-deployment.yaml`): no están detrás del LB (tiran trabajo
-  de Valkey). SIGTERM drena los jobs en vuelo (`terminationGracePeriodSeconds`
-  240s, alineado con `WORKER_CLOSE_TIMEOUT_MS` 210s).
-- **Services LoadBalancer:** el CCM crea DOS Hetzner LB reales apuntando a los
-  pods por la red privada: `mapa-lb` (selector tier=web → dominio público) y
-  `mapa-api-lb` (selector tier=api → consumidores externos). Health check sobre
-  el **NodePort** (no fijar `health-check-port`; `3000` es el puerto interno del
-  pod → causaría 503), protocolo HTTP, path `/api/readyz`.
+## Tiers `web` y `api`
 
-## Borde: Cloudflare + R2
+`web` y `api` están separados a propósito:
 
-- **TLS por target (envsubst, placeholders `WEB_TLS_ANNOTATIONS` /
-  `API_TLS_ANNOTATIONS`):** `staging` termina en **Cloudflare** (proxied), el LB
-  lleva el Origin cert `cf-origin-dreamit`; `prod` usa cert **managed de
-  Hetzner** en el LB (`:443`, `http-managed-certificate-domains`). El tier `api`
-  replica siempre el perfil de `web`.
-- **R2 (Cloudflare):** bucket `vzla-terremoto-bucket` con dominio CDN propio.
-  Sirve (1) las **imágenes** (subidas vía `lib/r2.ts` en cada ingesta + el
-  backlog migrado por `worker/`) y (2) los **assets estáticos** de Next.js
-  (`assetPrefix` → R2), evitando el version-skew entre pods.
+- `web` corre el frontend Next en `:3000`. No sirve la API ni accede a Postgres.
+  El navegador usa `NEXT_PUBLIC_API_URL`; server components pueden usar
+  `INTERNAL_API_URL`.
+- `api` corre Express en `:8080`. Sirve toda la superficie `/api`, CORS,
+  Turnstile, rate-limit, OpenPanel proxy y acceso Drizzle.
+- Cada tier tiene su propio Service LoadBalancer, HPA, probes y recursos. Un
+  pico de API no debe ahogar el render del frontend.
+- El rollout usa `maxUnavailable: 0`, `maxSurge: 1`, probes de readiness y
+  `preStop` para drenar pods viejos.
 
-## Pipeline (`deploy-hetzner.yml`)
+## Workers, migraciones y schedulers
 
-Workflow de **deploy únicamente**. Se dispara cuando un PR se MERGEA a `main`
-(`pull_request: types:[closed]`, gate `merged==true && base.ref=='main'` → deploy
-a staging) o por `workflow_dispatch` con un solo input: `target`
-(`staging` / `prod`). NO existe el input `what` ni jobs de provision / plan /
-recreate-master (la infra se corre a mano con tofu/kubectl).
+- `migrate-worker` reutiliza la imagen backend y ejecuta `npx tsx worker/index.ts`.
+- El Job `migrate` reutiliza la imagen backend y ejecuta `npm run migrate`.
+- `migrate-env` contiene secretos para backfills one-time desde Neon y R2.
+- En producción, los schedulers externos de sync y hub están apagados por
+  defecto (`SYNC_SCHEDULERS=0`, `HUB_SCHEDULERS=0`) para evitar scraping
+  automático; los jobs manuales siguen disponibles.
+- SIGTERM del worker drena trabajos en vuelo antes de que Kubernetes lo mate.
 
-Hace: gate de verificación (tsc + eslint + openapi), construye las imágenes
-(app y worker) y las sube a GHCR (login con un PAT clásico,
-`secrets.TOKEN_GITHUB_PACKAGES` + `secrets.GHCR_PULL_USER`, NO el
-`GITHUB_TOKEN`), sube los estáticos a R2, renderiza AMBOS `Service` por target
-(envsubst del perfil TLS), aplica `service.yaml`, `deployment.yaml` (web + api),
-`hpa.yaml`, `cluster-autoscaler.yaml` y `worker-deployment.yaml`, corre la
-migración Drizzle gateada y hace el rollout (zero-downtime, `set image` +
-`rollout status` en `web` y `api`). El estado de OpenTofu vive en el bucket de
-Hetzner (el runner es efímero).
+## Cloudflare, TLS y R2
+
+- Cloudflare queda delante de los hosts públicos.
+- El workflow renderiza las anotaciones TLS de `service.yaml` con `envsubst`:
+  `staging` usa el cert Origin de Cloudflare; `prod` usa cert gestionado de
+  Hetzner para los hosts públicos declarados en `PROD_HOST`.
+- El Service `api` replica el perfil TLS del Service `web`; en prod,
+  `PROD_HOST` debe cubrir web y `api.terremotovenezuela.app`.
+- R2 sirve fotos subidas por backend/worker y los assets `/_next/static`
+  cargados antes del rollout. La sincronización es aditiva, sin `--delete`, para
+  no romper sesiones que aún referencian chunks antiguos.
+
+## Pipeline de deploy
+
+`.github/workflows/deploy-hetzner.yml` es deploy-only:
+
+1. `verify`: instala dependencias en `backend/` y `frontend/`, typecheck de API y
+   worker, lint de frontend.
+2. Construye y pushea a GHCR dos imágenes: `*-frontend:<sha>` y
+   `*-backend:<sha>`.
+3. Configura `kubectl`, secrets de pull/runtime y, si existen secretos, el CA.
+4. Sube estáticos de Next a R2.
+5. Aplica Services, Deployments, HPA, CA y worker.
+6. Corre el Job de migraciones Drizzle antes del rollout.
+7. Rota `deployment/web`, `deployment/api` y, si existe, `migrate-worker`.
+
+Triggers:
+
+- PR mergeado a `main` despliega staging.
+- `workflow_dispatch` despliega `staging` o `prod`.
+- Prod nunca sale automáticamente de un merge.
 
 ## Diagrama
 
 ```mermaid
 flowchart TB
     user["Usuario / navegador"]
-    thirdparty["Terceros<br/>(scrapers / integraciones)"]
-    cf["Cloudflare (proxied)"]
-    r2["Cloudflare R2<br/>imágenes + assets Next.js"]
-    lbweb["Hetzner LB (mapa-lb)<br/>tier=web · CCM"]
-    lbapi["Hetzner LB (mapa-api-lb)<br/>tier=api · CCM"]
+    thirdparty["Terceros / integraciones"]
+    cf["Cloudflare"]
+    r2["Cloudflare R2<br/>fotos + _next/static"]
+    lbweb["Hetzner LB mapa-lb<br/>Service web"]
+    lbapi["Hetzner LB mapa-api-lb<br/>Service api"]
 
     user --> cf
+    user -.fetch API.-> cf
     thirdparty --> cf
     cf --> lbweb
     cf --> lbapi
-    cf -.assets / imágenes.-> r2
+    cf -.assets / fotos.-> r2
 
     subgraph net["Red privada 10.0.0.0/16 - hel1"]
         subgraph k3s["Cluster k3s"]
-            master["mapa-master<br/>10.0.1.5 · control plane + CCM + CA"]
-            nodes["workers EFÍMEROS<br/>pool del CA (2:5, cx23)"]
-            web["Deployment web<br/>Next.js · 3 pods (HPA 3-20)"]
-            api["Deployment api<br/>Next.js · 3 pods (HPA 3-30)"]
-            mw["Deployment migrate-worker<br/>BullMQ · 2 pods"]
+            master["mapa-master<br/>control plane + CCM + CA"]
+            nodes["workers efimeros<br/>pool CA 2:5"]
+            web["Deployment web<br/>Next :3000"]
+            api["Deployment api<br/>Express :8080"]
+            worker["Deployment migrate-worker<br/>BullMQ"]
+            migrate["Job migrate<br/>Drizzle"]
         end
-        pg["mapa-postgres 10.0.1.10<br/>bases: app + imported"]
-        vk["mapa-valkey 10.0.1.11<br/>colas BullMQ"]
+        pg["mapa-postgres<br/>DB app + imported"]
+        vk["mapa-valkey<br/>BullMQ + rate-limit"]
     end
 
-    lbweb --> nodes
-    lbapi --> nodes
-    nodes --- web
-    nodes --- api
+    lbweb --> web
+    lbapi --> api
     master -.crea/destruye.-> nodes
-    web --> pg
+    web -.SSR INTERNAL_API_URL.-> api
     api --> pg
-    mw --> pg
-    mw --> vk
-    mw -.sube imágenes.-> r2
+    api --> vk
+    api --> r2
+    worker --> pg
+    worker --> vk
+    worker --> r2
+    migrate --> pg
 
     ci["GitHub Actions<br/>deploy-hetzner.yml"]
-    tfstate["Hetzner Object Storage<br/>estado OpenTofu"]
-    ci -.kubectl 6443.-> master
+    tfstate["Hetzner Object Storage<br/>OpenTofu state"]
+    ci -.kubectl.-> master
     ci -.tofu state.-> tfstate
 ```
+
+## Documentos relacionados
+
+- `docs/architecture/architecture.md`: mapa general del sistema actual.
+- `docs/deploy/proceso-de-deploy.md`: pasos operativos del workflow.
+- `docs/deploy/estructura-infra.md`: mapa de carpetas de infraestructura.
+- `docs/deploy/migraciones-de-base-de-datos.md`: reglas de schema/migraciones.
+- `docs/rfcs/0004-autoscaling-y-split-web-api.md`: contexto del split y nodos
+  efímeros.
